@@ -1,12 +1,17 @@
--- One-time sample setup. Replace the email with an existing Supabase Auth user.
--- This script does not overwrite an existing tenant name or membership role.
+-- Sample tenant seed for METATYA Sports OS.
+-- For manual execution, replace YOUR_EMAIL_HERE with an existing Supabase Auth email.
+-- Safe to rerun: existing tenant name and membership role are not overwritten.
 begin;
 do $$
 declare
-  v_admin_email text := 'REPLACE_WITH_EXISTING_AUTH_EMAIL@example.com';
+  v_admin_email text := 'YOUR_EMAIL_HERE';
   v_user_id uuid;
   v_tenant_id uuid;
 begin
+  if v_admin_email = 'YOUR_EMAIL_HERE' or length(trim(v_admin_email)) = 0 then
+    raise exception 'Replace YOUR_EMAIL_HERE with the admin email before running this seed.';
+  end if;
+
   select id into v_user_id
   from auth.users
   where lower(email) = lower(trim(v_admin_email))
