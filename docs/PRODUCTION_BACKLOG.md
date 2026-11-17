@@ -31,7 +31,11 @@
 - [x] اصلاح فیلتر `webpack.watchOptions.ignored` برای حذف ورودی‌های خالی و RegExp ناسازگار با schema Webpack.
 - [ ] افزودن کلید عمومی `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` در Netlify با Scopeهای Builds و Functions و بدون علامت Secret.
 - [ ] حذف متغیر قدیمی `NEXT_PUBLIC_SUPABASE_ANON_KEY` پس از تأیید متغیر جدید.
-- [ ] اجرای موفق Netlify Deploy و بررسی ورود/داشبورد با داده آزمایشی.
+- [x] Netlify production-context build برای commit `3e101462f78a8fa1d3868afb926eff19b890ec02` با وضعیت `ready` منتشر شد؛ Deploy ID: `6afc53b1567e5a2f7dfb5682`. سایت همچنان Team SSO-protected است و این انتشار به معنی تأیید Production عمومی نیست.
+- [x] GitHub Actions run `44091103349` برای همین commit موفق شد: TypeScript، ESLint، `npm audit --omit=dev` و Next.js production build.
+- [ ] افزودن `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` در Netlify با Scopeهای Builds و Functions و بدون علامت Secret؛ مقدار از Supabase Dashboard دریافت شود.
+- [ ] حذف `NEXT_PUBLIC_SUPABASE_ANON_KEY` قدیمی که قبلاً به‌عنوان Secret ذخیره شده بود، پس از تأیید کلید Publishable جدید.
+- [ ] اجرای smoke test ورود، نشست، داشبورد و APIها پس از ثبت کلید Publishable.
 - [ ] آزمون دو کاربر و دو tenant همچنان پیش‌نیاز rollout گسترده‌تر است؛ در بک‌لاگ امنیتی باقی می‌ماند.
 
 این فاز فقط Deploy محدود/آزمایشی را مجاز می‌کند؛ Production عمومی و داده واقعی همچنان مسدود هستند.
