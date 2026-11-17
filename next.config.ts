@@ -7,11 +7,17 @@ const nextConfig: NextConfig = {
   // Do not ignore /data/** globally because the project itself lives under /data/data.
   webpack(config) {
     const existingIgnored = config.watchOptions?.ignored;
-    const ignored = Array.isArray(existingIgnored)
-      ? existingIgnored
-      : existingIgnored
-        ? [existingIgnored]
-        : [];
+    const ignored = (
+      Array.isArray(existingIgnored)
+        ? existingIgnored
+        : existingIgnored
+          ? [existingIgnored]
+          : []
+    ).filter(
+      (entry): entry is string | RegExp =>
+        (typeof entry === "string" && entry.trim().length > 0) ||
+        entry instanceof RegExp
+    );
 
     config.watchOptions = {
       ...config.watchOptions,
