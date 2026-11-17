@@ -1,20 +1,21 @@
 # METATYA Sports OS
 
-A general-purpose, multi-tenant sports club management foundation built with Next.js and Supabase.
+هسته عمومی مدیریت باشگاه‌ها و سازمان‌های ورزشی با Next.js و Supabase.
 
-## Scope
-- General non-weapon sports clubs (for example volleyball, swimming, and fitness).
-- Organization membership and role-based access.
-- Members, events, and results.
-- Server-side tenant membership validation on every protected API request.
+## دامنه فاز اول
+- باشگاه‌های عمومی مانند والیبال، شنا و بدنسازی
+- چندسازمانی، عضویت و نقش‌ها
+- پرونده اعضا، رویدادها و نتایج
+- کنترل دسترسی در API و RLS
 
-## Setup
-1. Copy `.env.example` to `.env.local`.
-2. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or the legacy anon key).
-3. Run the SQL files in `supabase/migrations` in order using the Supabase SQL Editor.
-4. Replace the email placeholder in `supabase/seed/001_sample_club.sql` and run it once.
-5. Run `npm install`, then `npm run dev`.
+## راه‌اندازی
+1. `.env.example` را به `.env.local` کپی کنید.
+2. `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` را تنظیم کنید. کلید قدیمی anon نیز به‌عنوان fallback پشتیبانی می‌شود.
+3. فایل `supabase/migrations/006_sports_multitenancy.sql` را در SQL Editor پروژه Supabase اجرا کنید.
+4. در فایل `supabase/seed/001_sample_club.sql` ایمیل کاربر Auth موجود را جایگزین placeholder کنید و اسکریپت را یک‌بار اجرا کنید.
+5. `npm install` و سپس `npm run dev`.
 
-The browser sends the selected `x-tenant-id`, but the API never trusts it on its own: each request authenticates the user and verifies an active membership for that exact tenant. RLS provides a second enforcement layer.
+## امنیت Tenant
+مرورگر شناسه سازمان انتخاب‌شده را در هدر `x-tenant-id` می‌فرستد. سرور این مقدار را به‌تنهایی معتبر نمی‌داند: در هر درخواست، کاربر را با `auth.getUser()` احراز می‌کند و عضویت فعال همان کاربر در همان سازمان را از دیتابیس بررسی می‌کند. سپس تمام کوئری‌ها به `tenant_id` تأییدشده محدود می‌شوند. RLS نیز یک لایه دفاعی مستقل است.
 
-Never put a Supabase secret/service-role key in a `NEXT_PUBLIC_*` variable.
+هیچ کلید secret یا service-role نباید در متغیر `NEXT_PUBLIC_*` قرار گیرد.
