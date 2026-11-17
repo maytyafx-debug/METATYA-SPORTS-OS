@@ -28,7 +28,7 @@
 ## راه‌اندازی محلی
 
 1. فایل `.env.example` را به `.env.local` کپی کنید.
-2. `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` را تنظیم کنید. کلید قدیمی anon فقط برای سازگاری پشتیبانی می‌شود.
+2. `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` را تنظیم کنید. اپلیکیشن فعلی از کلید عمومی Publishable استفاده می‌کند؛ متغیر قدیمی `NEXT_PUBLIC_SUPABASE_ANON_KEY` دیگر توسط کد runtime خوانده نمی‌شود.
 3. وابستگی‌ها را نصب کنید: `npm install`
 4. کنترل‌ها را اجرا کنید: `npm run typecheck`، `npm run lint` و `npm run build`
 5. برای اجرای توسعه: `npm run dev`
@@ -65,3 +65,41 @@
 ## استاندارد مادر اکوسیستم METATYA
 
 این پروژه ملزم به رعایت [استاندارد مادر مهندسی و حاکمیت اکوسیستم METATYA](https://github.com/maytyafx-debug/metatya-ai-core/blob/main/METATYA_ECOSYSTEM_STANDARD.md) است. این سند قواعد مشترک مالکیت و مجوز، امنیت، حریم خصوصی، صحت داده، کیفیت مهندسی، تست، بازیابی و حاکمیت را برای همه محصولات و پروژه‌های METATYA تعریف می‌کند. قواعد تخصصی این مخزن باید مکمل آن باشند و نباید الزام‌های مادر را تضعیف کنند.
+
+
+## استقرار آزمایشی روی Netlify
+
+مخزن متصل به پروژه Netlify:
+
+`https://github.com/maytyafx-debug/METATYA-SPORTS-OS`
+
+شاخه انتشار: `main`  
+Base directory: ریشه مخزن (خالی یا `/`)  
+Build command: `npm run build`  
+Publish directory: `.next`  
+Node.js: نسخه 22
+
+فایل `netlify.toml` در ریشه مخزن همین تنظیمات را ثبت می‌کند. Netlify نسخه سازگار Next.js Runtime را خودکار تشخیص می‌دهد و نیازی به نصب دستی `@netlify/plugin-nextjs` نیست. برای App Router، SSR و API Routes هیچ rewrite عمومی `/* → /index.html` اضافه نکنید.
+
+### Environment Variables در Netlify
+
+در **Project configuration → Environment variables** دو متغیر زیر را ثبت کنید:
+
+| نام | مقدار |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | آدرس پروژه Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | کلید عمومی Publishable همان پروژه |
+
+هر دو متغیر باید برای **Production** و **Deploy Previews** موجود باشند و Scope آن‌ها دست‌کم شامل **Builds** و **Functions** باشد (All scopes نیز مناسب است). چون پیشوند `NEXT_PUBLIC_` دارند، مقدارشان در bundle مرورگر قرار می‌گیرد؛ گزینه **Contains secret values** را برایشان فعال نکنید. هرگز `service_role`، Secret API Key، رمز دیتابیس یا JWT secret را در متغیرهای عمومی وارد نکنید.
+
+**پاک‌سازی متغیر قدیمی:** در Netlify متغیر `NEXT_PUBLIC_SUPABASE_ANON_KEY` فعلی به‌عنوان Secret علامت خورده است. کد جدید دیگر آن را نمی‌خواند. پس از افزودن و تأیید `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`، متغیر قدیمی را از Netlify حذف کنید تا یک کلید عمومیِ bundleشونده به‌اشتباه در مخزن Secrets نگهداری نشود.
+
+### مراحل بعد از Deploy
+
+1. Build Logs را بررسی کنید و موفقیت مراحل Next.js build و Netlify Runtime را تأیید کنید.
+2. دامنه نهایی Netlify را در Supabase → Authentication → URL Configuration به‌عنوان Site URL ثبت کنید.
+3. مسیر `https://YOUR-NETLIFY-DOMAIN/auth/callback` را به Redirect URLs مجاز اضافه کنید.
+4. ورود با حساب مجاز، Refresh، انتخاب سازمان فعال و APIهای عملیاتی را با داده آزمایشی بررسی کنید.
+5. دسترسی سایت را در حالت Team SSO/private نگه دارید. انتشار عمومی و استفاده از داده واقعی ورزشکاران تا تکمیل آزمون‌های امنیتی مجاز نیست.
+
+این استقرار فقط کد برنامه را Build می‌کند؛ هیچ migration یا SQL روی Supabase اجرا نمی‌شود. Migrationها و Seedها خارج از چرخه Deploy هستند و در این مرحله نباید اجرا شوند.

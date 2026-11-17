@@ -22,3 +22,16 @@
 ## MVP scope guard
 
 در فاز MVP فقط جداول و قابلیت‌های متعلق به `sports_*` موضوع تغییر و ممیزی فعال هستند. هیچ جدول Legacy یا تنظیم Auth خارج از محدوده، بدون درخواست و تأیید جداگانه تغییر داده نمی‌شود.
+
+
+## Netlify staging — 2026-11-17
+
+- [x] شناسایی مخزن واقعی متصل به Netlify: `maytyafx-debug/METATYA-SPORTS-OS`، شاخه `main`.
+- [x] آماده‌سازی `netlify.toml` برای Next.js Runtime و Node.js 22.
+- [x] اصلاح فیلتر `webpack.watchOptions.ignored` برای حذف ورودی‌های خالی و RegExp ناسازگار با schema Webpack.
+- [ ] افزودن کلید عمومی `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` در Netlify با Scopeهای Builds و Functions و بدون علامت Secret.
+- [ ] حذف متغیر قدیمی `NEXT_PUBLIC_SUPABASE_ANON_KEY` پس از تأیید متغیر جدید.
+- [ ] اجرای موفق Netlify Deploy و بررسی ورود/داشبورد با داده آزمایشی.
+- [ ] آزمون دو کاربر و دو tenant همچنان پیش‌نیاز rollout گسترده‌تر است؛ در بک‌لاگ امنیتی باقی می‌ماند.
+
+این فاز فقط Deploy محدود/آزمایشی را مجاز می‌کند؛ Production عمومی و داده واقعی همچنان مسدود هستند.

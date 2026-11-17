@@ -14,9 +14,8 @@ const nextConfig: NextConfig = {
           ? [existingIgnored]
           : []
     ).filter(
-      (entry): entry is string | RegExp =>
-        (typeof entry === "string" && entry.trim().length > 0) ||
-        entry instanceof RegExp
+      (entry): entry is string =>
+        typeof entry === "string" && entry.trim().length > 0
     );
 
     config.watchOptions = {
