@@ -37,6 +37,41 @@ create unique index if not exists sports_volleyball_team_jersey_unique
   on public.sports_volleyball_team_members(team_id, jersey_number)
   where jersey_number is not null and status = 'active';
 
+create table if not exists public.sports_volleyball_competitions (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.sports_tenants(id) on delete cascade,
+  name varchar(160) not null check (char_length(trim(name)) between 2 and 160),
+  format varchar(30) not null default 'league' check (format in ('league','cup','round_robin','friendly','tournament')),
+  season varchar(30),
+  start_date date,
+  end_date date,
+  status varchar(20) not null default 'draft' check (status in ('draft','registration','in_progress','completed','cancelled')),
+  points_win_3_0 smallint not null default 3 check (points_win_3_0 between 0 and 10),
+  points_win_3_2 smallint not null default 2 check (points_win_3_2 between 0 and 10),
+  points_loss_2_3 smallint not null default 1 check (points_loss_2_3 between 0 and 10),
+  points_loss_0_3 smallint not null default 0 check (points_loss_0_3 between 0 and 10),
+  description varchar(2000),
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (id, tenant_id),
+  check (end_date is null or start_date is null or end_date >= start_date)
+);
+
+create table if not exists public.sports_volleyball_competition_teams (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null,
+  competition_id uuid not null,
+  team_id uuid not null,
+  pool_code varchar(20),
+  seed smallint check (seed is null or seed > 0),
+  status varchar(20) not null default 'registered' check (status in ('registered','withdrawn')),
+  registered_at timestamptz not null default now(),
+  unique (competition_id, team_id),
+  foreign key (competition_id, tenant_id) references public.sports_volleyball_competitions(id, tenant_id) on delete cascade,
+  foreign key (team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict
+);
+
 create table if not exists public.sports_volleyball_matches (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.sports_tenants(id) on delete cascade,
@@ -58,7 +93,7 @@ create table if not exists public.sports_volleyball_matches (
   unique (id, tenant_id),
   foreign key (home_team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict,
   foreign key (away_team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict,
-  foreign key (event_id, tenant_id) references public.sports_events(id, tenant_id) on delete restrict
+  foreign key (event_id, tenant_id) references public.sports_events(id, tenant_id) on delete restrict,\n  foreign key (competition_id, tenant_id) references public.sports_volleyball_competitions(id, tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_volleyball_match_sets (
@@ -105,7 +140,7 @@ create table if not exists public.sports_volleyball_result_audit (
 
 create index if not exists sports_volleyball_teams_tenant_status_idx on public.sports_volleyball_teams(tenant_id,status);
 create index if not exists sports_volleyball_team_members_tenant_member_idx on public.sports_volleyball_team_members(tenant_id,member_id);
-create index if not exists sports_volleyball_matches_tenant_schedule_idx on public.sports_volleyball_matches(tenant_id,scheduled_at);
+create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);\ncreate index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);\ncreate index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);\ncreate index if not exists sports_volleyball_matches_tenant_schedule_idx on public.sports_volleyball_matches(tenant_id,scheduled_at);
 create index if not exists sports_volleyball_matches_tenant_status_idx on public.sports_volleyball_matches(tenant_id,status,result_status);
 create index if not exists sports_volleyball_sets_tenant_match_idx on public.sports_volleyball_match_sets(tenant_id,match_id,set_number);
 create index if not exists sports_volleyball_rosters_tenant_match_idx on public.sports_volleyball_match_rosters(tenant_id,match_id,team_id);
@@ -115,7 +150,7 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_matches',
+    'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_competitions',\n    'sports_volleyball_competition_teams','sports_volleyball_matches',
     'sports_volleyball_match_sets','sports_volleyball_match_rosters','sports_volleyball_result_audit'
   ] loop
     execute format('alter table public.%I enable row level security', t);
@@ -133,6 +168,27 @@ using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','
 with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff','coach']::text[])));
 create policy volleyball_teams_delete on public.sports_volleyball_teams for delete to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']::text[])));
+
+
+create policy volleyball_competitions_select on public.sports_volleyball_competitions for select to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff','member']::text[])));
+create policy volleyball_competitions_insert on public.sports_volleyball_competitions for insert to authenticated
+with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])));
+create policy volleyball_competitions_update on public.sports_volleyball_competitions for update to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])))
+with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])));
+create policy volleyball_competitions_delete on public.sports_volleyball_competitions for delete to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']::text[])));
+
+create policy volleyball_competition_teams_select on public.sports_volleyball_competition_teams for select to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff','member']::text[])));
+create policy volleyball_competition_teams_insert on public.sports_volleyball_competition_teams for insert to authenticated
+with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff','coach']::text[])));
+create policy volleyball_competition_teams_update on public.sports_volleyball_competition_teams for update to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff','coach']::text[])))
+with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff','coach']::text[])));
+create policy volleyball_competition_teams_delete on public.sports_volleyball_competition_teams for delete to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])));
 
 create policy volleyball_team_members_select on public.sports_volleyball_team_members for select to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff']::text[])));
