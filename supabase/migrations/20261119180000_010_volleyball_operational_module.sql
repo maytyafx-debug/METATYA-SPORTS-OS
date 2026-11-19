@@ -102,6 +102,19 @@ create table if not exists public.sports_volleyball_matches (
   foreign key (competition_id, tenant_id) references public.sports_volleyball_competitions(id, tenant_id) on delete restrict
 );
 
+create table if not exists public.sports_volleyball_match_officials (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null,
+  match_id uuid not null,
+  user_id uuid not null references auth.users(id) on delete restrict,
+  official_role varchar(30) not null check (official_role in ('first_referee','second_referee','scorer','line_judge')),
+  status varchar(20) not null default 'assigned' check (status in ('assigned','accepted','declined','replaced')),
+  assigned_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (match_id,user_id,official_role),
+  foreign key (match_id,tenant_id) references public.sports_volleyball_matches(id,tenant_id) on delete cascade
+);
+
 create table if not exists public.sports_volleyball_match_sets (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null,
@@ -149,6 +162,7 @@ create index if not exists sports_volleyball_team_members_tenant_member_idx on p
 create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);
 create index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);
 create index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);
+create index if not exists sports_volleyball_match_officials_tenant_match_idx on public.sports_volleyball_match_officials(tenant_id,match_id,status);
 create index if not exists sports_volleyball_matches_tenant_schedule_idx on public.sports_volleyball_matches(tenant_id,scheduled_at);
 create index if not exists sports_volleyball_matches_tenant_status_idx on public.sports_volleyball_matches(tenant_id,status,result_status);
 create index if not exists sports_volleyball_sets_tenant_match_idx on public.sports_volleyball_match_sets(tenant_id,match_id,set_number);
@@ -160,7 +174,7 @@ declare t text;
 begin
   foreach t in array array[
     'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_competitions',
-    'sports_volleyball_competition_teams','sports_volleyball_matches',
+    'sports_volleyball_competition_teams','sports_volleyball_matches','sports_volleyball_match_officials',
     'sports_volleyball_match_sets','sports_volleyball_match_rosters','sports_volleyball_result_audit'
   ] loop
     execute format('alter table public.%I enable row level security', t);
@@ -220,6 +234,16 @@ with check ((select private.has_active_tenant_role(tenant_id, array['owner','adm
 create policy volleyball_matches_delete on public.sports_volleyball_matches for delete to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']::text[])));
 
+create policy volleyball_officials_select on public.sports_volleyball_match_officials for select to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','staff']::text[])));
+create policy volleyball_officials_insert on public.sports_volleyball_match_officials for insert to authenticated
+with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])));
+create policy volleyball_officials_update on public.sports_volleyball_match_officials for update to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])))
+with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff']::text[])));
+create policy volleyball_officials_delete on public.sports_volleyball_match_officials for delete to authenticated
+using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']::text[])));
+
 create policy volleyball_sets_select on public.sports_volleyball_match_sets for select to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff','member']::text[])));
 create policy volleyball_sets_insert on public.sports_volleyball_match_sets for insert to authenticated
@@ -248,7 +272,8 @@ with check ((select private.has_active_tenant_role(tenant_id, array['owner','adm
 grant select, insert, update, delete on public.sports_volleyball_teams,
   public.sports_volleyball_competitions, public.sports_volleyball_competition_teams,
   public.sports_volleyball_team_members, public.sports_volleyball_matches,
-  public.sports_volleyball_match_sets, public.sports_volleyball_match_rosters to authenticated;
+  public.sports_volleyball_match_sets, public.sports_volleyball_match_rosters,
+  public.sports_volleyball_match_officials to authenticated;
 grant select, insert on public.sports_volleyball_result_audit to authenticated;
 
 -- Tenant identity cannot be changed after creation.
@@ -266,7 +291,7 @@ declare t text;
 begin
   foreach t in array array[
     'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_competitions',
-    'sports_volleyball_competition_teams','sports_volleyball_matches',
+    'sports_volleyball_competition_teams','sports_volleyball_matches','sports_volleyball_match_officials',
     'sports_volleyball_match_sets','sports_volleyball_match_rosters','sports_volleyball_result_audit'
   ] loop
     execute format('drop trigger if exists %I on public.%I', t || '_tenant_immutable', t);
