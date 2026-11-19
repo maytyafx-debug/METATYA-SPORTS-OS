@@ -1,7 +1,9 @@
 name: Migration replay and security integration
 on:
+  push:
+    branches: [recovery/migration-history-reconciliation-v1]
   pull_request:
-    branches: [main, recovery/migration-history-reconciliation-v1, fix/tenant-security-role-alignment]
+    branches: [fix/tenant-security-role-alignment]
 permissions:
   contents: read
 jobs:
