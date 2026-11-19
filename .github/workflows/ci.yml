@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main, recovery/migration-history-reconciliation-v1]
+    branches: [main]
 
 permissions:
   contents: read
@@ -12,7 +12,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
@@ -29,8 +29,8 @@ jobs:
         run: npm run typecheck
       - name: ESLint
         run: npm run lint
-      - name: Tenant authorization tests
-        run: npm run test:security
+      - name: Tenant authorization and volleyball scoring tests
+        run: npm test
       - name: Production dependency audit
         run: npm audit --omit=dev
       - name: Production build
