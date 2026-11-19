@@ -49,9 +49,10 @@ begin
   if new.tenant_id is distinct from old.tenant_id then
     raise exception 'tenant_id is immutable' using errcode = '42501';
   end if;
-  if tg_table_name = 'sports_tenant_memberships'
-     and new.user_id is distinct from old.user_id then
-    raise exception 'membership user_id is immutable' using errcode = '42501';
+  if tg_table_name = 'sports_tenant_memberships' then
+    if new.user_id is distinct from old.user_id then
+      raise exception 'membership user_id is immutable' using errcode = '42501';
+    end if;
   end if;
   return new;
 end;
