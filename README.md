@@ -1,4 +1,4 @@
-# METATYA Sports OS
+# METATYA SPORT OS
 
 هسته ماژولار و چندسازمانی مدیریت باشگاه‌ها و سازمان‌های ورزشی. هسته مشترک مستقل از رشته ورزشی است و قابلیت‌های تخصصی هر رشته در ماژول‌های جداگانه توسعه می‌یابد.
 
@@ -29,7 +29,7 @@
 ## راه‌اندازی محلی
 
 1. فایل `.env.example` را به `.env.local` کپی کنید.
-2. `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` را تنظیم کنید. اپلیکیشن فعلی از کلید عمومی Publishable استفاده می‌کند؛ متغیر قدیمی `NEXT_PUBLIC_SUPABASE_ANON_KEY` دیگر توسط کد runtime خوانده نمی‌شود.
+2. `NEXT_PUBLIC_SUPABASE_URL` و `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` را تنظیم کنید. کلید عمومی Publishable اولویت دارد؛ برای سازگاری موقت، اگر تعریف نشده باشد کد از `NEXT_PUBLIC_SUPABASE_ANON_KEY` به‌عنوان fallback استفاده می‌کند.
 3. وابستگی‌ها را نصب کنید: `npm install`
 4. کنترل‌ها را اجرا کنید: `npm run typecheck`، `npm run lint` و `npm run build`
 5. برای اجرای توسعه: `npm run dev`
@@ -38,7 +38,7 @@
 
 ## وضعیت دیتابیس و اجرای Migration
 
-فایل `supabase/migrations/006_sports_multitenancy.sql` و Seed نمونه در مخزن آماده بررسی هستند؛ اما اجرای آن‌ها روی پروژه متصل، مرحله‌ای جداگانه و نیازمند تأیید مالک پروژه است.
+بسته بازیابی تاریخچه Migrationها در [PR #10](https://github.com/maytyafx-debug/METATYA-SPORTS-OS/pull/10) ارائه شده است: ۱۲ Migration تاریخی از دفتر ثبت Supabase بازیابی شده‌اند و زنجیره کامل به‌همراه تست‌های امنیتی و والیبال در PostgreSQL ایزوله اجرا شده است. فایل قدیمی و بدون timestamp مربوط به 006 آرشیو شده است. PR #10 هنوز Draft است و تا بررسی و ادغام مجاز آن، هیچ Migration یا Seed نباید روی دیتابیس زنده اجرا شود.
 
 پیش از اجرا باید:
 - تاریخچه Migrationهای دیتابیس با فایل‌های مخزن تطبیق داده شود.
@@ -93,7 +93,7 @@ Node.js: نسخه 22
 
 هر دو متغیر باید برای **Production** و **Deploy Previews** موجود باشند و Scope آن‌ها دست‌کم شامل **Builds** و **Functions** باشد (All scopes نیز مناسب است). چون پیشوند `NEXT_PUBLIC_` دارند، مقدارشان در bundle مرورگر قرار می‌گیرد؛ گزینه **Contains secret values** را برایشان فعال نکنید. هرگز `service_role`، Secret API Key، رمز دیتابیس یا JWT secret را در متغیرهای عمومی وارد نکنید.
 
-**پاک‌سازی متغیر قدیمی:** در Netlify متغیر `NEXT_PUBLIC_SUPABASE_ANON_KEY` فعلی به‌عنوان Secret علامت خورده است. کد جدید دیگر آن را نمی‌خواند. پس از افزودن و تأیید `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`، متغیر قدیمی را از Netlify حذف کنید تا یک کلید عمومیِ bundleشونده به‌اشتباه در مخزن Secrets نگهداری نشود.
+**پاک‌سازی متغیر قدیمی:** در Netlify متغیر `NEXT_PUBLIC_SUPABASE_ANON_KEY` فعلی به‌عنوان Secret علامت خورده است. کد فعلاً برای سازگاری، کلید قدیمی را به‌عنوان fallback می‌خواند. پس از افزودن و تأیید `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` در Production و Deploy Previews، می‌توان متغیر قدیمی را حذف کرد؛ حذف آن پیش از جایگزینی ممکن است اتصال را قطع کند.
 
 ### مراحل بعد از Deploy
 
@@ -105,6 +105,10 @@ Node.js: نسخه 22
 
 این استقرار فقط کد برنامه را Build می‌کند؛ هیچ migration یا SQL روی Supabase اجرا نمی‌شود. Migrationها و Seedها خارج از چرخه Deploy هستند و در این مرحله نباید اجرا شوند.
 
+
+## ماژول والیبال
+
+ماژول والیبال به‌عنوان بخش تخصصی Sports OS توسعه می‌یابد و از هسته مشترک سازمان، هویت، اعضا و مجوزها استفاده می‌کند. محدوده و وضعیت قابلیت‌ها در [سند ماژول والیبال](docs/VOLLEYBALL_MODULE.md) و [نقشه کامل اجرای والیبال](docs/VOLLEYBALL_FULL_ROADMAP.md) ثبت شده است. نسخه فعلی شاخه توسعه شامل مدیریت تیم، فهرست بازیکنان، برنامه مسابقه، ثبت امتیاز ست‌ها و گردش تأیید نتیجه است. Migration اختصاصی والیبال تا زمان تطبیق کامل تاریخچه Migration دیتابیس اجرا نمی‌شود.
 
 ## پلتفرم مشترک تمام رشته‌های ورزشی
 
