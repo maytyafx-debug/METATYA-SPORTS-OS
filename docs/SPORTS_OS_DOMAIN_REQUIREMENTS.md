@@ -1,5 +1,9 @@
 # METATYA SPORTS OS — Cross-Sport Domain Requirements
 
+## Parent–child architecture
+
+METATYA is the parent platform and owner of the overall ecosystem. METATYA SPORTS OS is one specialized child core under METATYA, alongside sibling cores such as METATYA BUSINESS OS and other future domain cores. Sports OS owns sports-domain workflows and sport modules; it consumes shared platform capabilities and standards defined by METATYA. It is not the parent of the ecosystem and is not a separate top-level product family.
+
 **Version:** 1.0  
 **Date:** 2026-11-19  
 **Status:** Consolidated requirements reference; implementation must be tracked separately.
