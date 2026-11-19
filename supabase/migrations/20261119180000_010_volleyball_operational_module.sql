@@ -76,6 +76,11 @@ create table if not exists public.sports_volleyball_matches (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.sports_tenants(id) on delete cascade,
   event_id uuid,
+  competition_id uuid,
+  stage_name varchar(80),
+  round_number smallint check (round_number is null or round_number > 0),
+  pool_code varchar(20),
+  match_number varchar(40),
   home_team_id uuid not null,
   away_team_id uuid not null,
   scheduled_at timestamptz not null,
@@ -93,7 +98,8 @@ create table if not exists public.sports_volleyball_matches (
   unique (id, tenant_id),
   foreign key (home_team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict,
   foreign key (away_team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict,
-  foreign key (event_id, tenant_id) references public.sports_events(id, tenant_id) on delete restrict,\n  foreign key (competition_id, tenant_id) references public.sports_volleyball_competitions(id, tenant_id) on delete restrict
+  foreign key (event_id, tenant_id) references public.sports_events(id, tenant_id) on delete restrict,
+  foreign key (competition_id, tenant_id) references public.sports_volleyball_competitions(id, tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_volleyball_match_sets (
@@ -140,7 +146,13 @@ create table if not exists public.sports_volleyball_result_audit (
 
 create index if not exists sports_volleyball_teams_tenant_status_idx on public.sports_volleyball_teams(tenant_id,status);
 create index if not exists sports_volleyball_team_members_tenant_member_idx on public.sports_volleyball_team_members(tenant_id,member_id);
-create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);\ncreate index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);\ncreate index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);\ncreate index if not exists sports_volleyball_matches_tenant_schedule_idx on public.sports_volleyball_matches(tenant_id,scheduled_at);
+create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);
+create index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);
+create index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);
+create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);
+create index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);
+create index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);
+create index if not exists sports_volleyball_matches_tenant_schedule_idx on public.sports_volleyball_matches(tenant_id,scheduled_at);
 create index if not exists sports_volleyball_matches_tenant_status_idx on public.sports_volleyball_matches(tenant_id,status,result_status);
 create index if not exists sports_volleyball_sets_tenant_match_idx on public.sports_volleyball_match_sets(tenant_id,match_id,set_number);
 create index if not exists sports_volleyball_rosters_tenant_match_idx on public.sports_volleyball_match_rosters(tenant_id,match_id,team_id);
@@ -150,7 +162,8 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_competitions',\n    'sports_volleyball_competition_teams','sports_volleyball_matches',
+    'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_competitions',
+    'sports_volleyball_competition_teams','sports_volleyball_matches',
     'sports_volleyball_match_sets','sports_volleyball_match_rosters','sports_volleyball_result_audit'
   ] loop
     execute format('alter table public.%I enable row level security', t);
@@ -254,7 +267,8 @@ do $$
 declare t text;
 begin
   foreach t in array array[
-    'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_matches',
+    'sports_volleyball_teams','sports_volleyball_team_members','sports_volleyball_competitions',
+    'sports_volleyball_competition_teams','sports_volleyball_matches',
     'sports_volleyball_match_sets','sports_volleyball_match_rosters','sports_volleyball_result_audit'
   ] loop
     execute format('drop trigger if exists %I on public.%I', t || '_tenant_immutable', t);
