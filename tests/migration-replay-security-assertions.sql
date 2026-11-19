@@ -13,6 +13,10 @@ begin
  or has_table_privilege('authenticated','public.sports_member_history','UPDATE')
  or has_table_privilege('authenticated','public.sports_member_history','DELETE')
  or has_table_privilege('anon','public.sports_member_history','SELECT')
+ or has_table_privilege('service_role','public.sports_member_history','INSERT')
+ or has_table_privilege('service_role','public.sports_member_history','UPDATE')
+ or has_table_privilege('service_role','public.sports_member_history','DELETE')
+ or not has_table_privilege('service_role','public.sports_member_history','SELECT')
  then raise exception 'member history grants are not least privilege'; end if;
  if has_table_privilege('authenticated','public.sports_members','DELETE') then raise exception 'authenticated can hard-delete members'; end if;
  select relforcerowsecurity into v_force from pg_class where oid='public.sports_member_history'::regclass;
@@ -39,8 +43,30 @@ begin
  begin insert into public.sports_member_history(tenant_id,member_id,change_type)
  values('10000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000030','update');
  raise exception 'direct audit insert should be denied'; exception when insufficient_privilege then null; end;
-end $$;
+ begin delete from public.sports_members where id='10000000-0000-4000-8000-000000000030';
+ raise exception 'hard member delete should be denied'; exception when insufficient_privilege then null; end;
+ begin insert into public.sports_members(tenant_id,full_name,sport_type)
+ values('10000000-0000-4000-8000-000000000002','Cross Tenant Insert','volleyball');
+ raise exception 'cross-tenant insert should be denied'; exception when insufficient_privilege then null; end;
+ begin update public.sports_members set tenant_id='10000000-0000-4000-8000-000000000002'
+ where id='10000000-0000-4000-8000-000000000030';
+ raise exception 'tenant reassignment should be denied'; exception when insufficient_privilege then null; end;
+end $;
+update public.sports_member_private set birth_date=date '2000-01-02'
+ where member_id='10000000-0000-4000-8000-000000000030';
 reset role;
+
+do $ declare n integer; payload jsonb;
+begin
+ select count(*) into n from public.sports_member_history
+ where member_id='10000000-0000-4000-8000-000000000030'
+ and new_data->>'private_fields_updated'='true';
+ if n<>1 then raise exception 'private-data history event missing'; end if;
+ select new_data into payload from public.sports_member_history
+ where member_id='10000000-0000-4000-8000-000000000030'
+ and new_data->>'private_fields_updated'='true';
+ if payload ? 'phone' or payload ? 'birth_date' then raise exception 'private data leaked into audit history'; end if;
+end $;
 
 set role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000011',false);

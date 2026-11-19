@@ -12,8 +12,8 @@ drop policy if exists sports_members_delete_admin on public.sports_members;
 alter table public.sports_member_history enable row level security;
 alter table public.sports_member_history force row level security;
 drop policy if exists sports_member_history_insert_admin on public.sports_member_history;
-revoke all privileges on table public.sports_member_history from public, anon, authenticated;
-grant select on table public.sports_member_history to authenticated;
+revoke all privileges on table public.sports_member_history from public, anon, authenticated, service_role;
+grant select on table public.sports_member_history to authenticated, service_role;
 
 create or replace function private.capture_sports_member_history()
 returns trigger language plpgsql security definer set search_path = pg_catalog
