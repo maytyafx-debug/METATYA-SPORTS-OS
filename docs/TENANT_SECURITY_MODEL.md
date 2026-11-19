@@ -1,7 +1,8 @@
 # METATYA Sports OS — Tenant Security Contract
 
-**Status:** Implemented in code/migration proposal; not yet deployed or runtime-verified.
-**Migration order:** Apply 006 first, then 007, only in an isolated Supabase-compatible environment before production approval.
+**Status:** Proposed code and migration hardening; not yet applied or runtime-verified.
+**Migration file:** `20261119120000_sports_tenant_security_alignment.sql`.
+**Migration gate:** The live Supabase ledger contains applied migrations whose SQL source files are missing from the repository. Restore and reconcile those sources before applying this migration, even in a staging environment.
 
 ## Canonical tenant roles
 
@@ -23,7 +24,7 @@ The member role does not receive access to the general sports_members directory 
 3. The resolver requires an active membership and an active tenant.
 4. API role checks use lib/tenancy/permissions.ts.
 5. PostgreSQL RLS independently checks the same tenant and role contract.
-6. Migration 007 forces RLS on all five tenant tables.
+6. The proposed timestamped migration forces RLS on the five core tenant tables.
 7. A private, fixed-search-path helper is used by policies to avoid recursive membership-table RLS checks. Its execution is revoked from PUBLIC and anon and granted only to authenticated.
 8. Tenant identity on sports records and the identity pair on memberships are immutable.
 9. A tenant cannot lose its last active owner through membership update/delete.
