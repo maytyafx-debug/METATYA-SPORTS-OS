@@ -14,8 +14,13 @@ export function validateVolleyballMatchScore(match: VolleyballMatchScore): Volle
   }
   let homeSetsWon = 0;
   let awaySetsWon = 0;
-  for (const [index, set] of match.sets.entries()) {
+  for (const [index, candidate] of match.sets.entries()) {
     const n = index + 1;
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      errors.push(`امتیازهای ست ${n} باید یک شیء معتبر باشد.`);
+      continue;
+    }
+    const set = candidate as VolleyballSetScore;
     if (!Number.isSafeInteger(set.home) || !Number.isSafeInteger(set.away) || set.home < 0 || set.away < 0) {
       errors.push(`امتیازهای ست ${n} باید عدد صحیح نامنفی باشند.`);
       continue;
