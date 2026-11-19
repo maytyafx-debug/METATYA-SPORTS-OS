@@ -60,7 +60,7 @@ The connected database reports these applied migration versions:
 | 20261118232655 | 009_sports_member_history | Source SQL is missing |
 | 20261119105357 | 009_sports_member_history_repair | Source SQL is missing |
 
-The proposed tenant-security migration is therefore stored as the next timestamped migration, `20261119120000_sports_tenant_security_alignment.sql`. It is **not applied**.
+The proposed timestamped migrations are `20261119120000_sports_tenant_security_alignment.sql` and `20261119150000_sports_member_history_hardening.sql`. They are **not applied**.
 
 ### Migration gate
 
@@ -93,14 +93,13 @@ This mismatch can produce confusing empty results or rejected writes. The draft 
 
 The live `sports_members` table contains `phone` and `birth_date` fields, in addition to ordinary roster fields. Row-level security filters rows, not individual columns. Expanding member-directory read access to coaches/staff without separating those fields could expose contact and date-of-birth information through direct Data API queries.
 
-The proposed timestamped security migration therefore:
+The proposed security migration `20261119120000_sports_tenant_security_alignment.sql`:
 - Copies `phone` and `birth_date` into a separate `sports_member_private` table without deleting the source values.
 - Restricts that private table to owner/admin roles.
 - Revokes broad table-level authenticated privileges on the general member table and grants only non-sensitive directory columns.
 - Preserves tenant RLS and immutable tenant identity.
-- Tightens member-history grants and FORCE RLS.
 
-This proposal is not yet runtime-verified. It requires isolated database tests for data-copy counts, grants, RLS, rollback, and API compatibility before application.
+A separate follow-on migration `20261119150000_sports_member_history_hardening.sql` is proposed to force RLS on member history, revoke anon access, limit authenticated privileges, and add the two missing indexes. Both migrations are un-applied proposals and depend on restoration of the missing historical migration sources.
 
 ## 7. Member-history and grants
 
@@ -111,7 +110,7 @@ The live `sports_member_history` table:
 - Has no matching trigger discovered in the inspected sports trigger inventory.
 - Has two foreign keys without covering indexes according to the Performance Advisor.
 
-The proposed migration revokes anon privileges, restricts authenticated mutations, forces RLS, keeps owner/admin access, and adds the two missing indexes. This still does not make it a complete audit log; official result changes, permission changes, exports, financial operations, and privileged support access need their own event coverage.
+The separate proposed migration `20261119150000_sports_member_history_hardening.sql` revokes anon privileges, restricts authenticated mutations, forces RLS, keeps owner/admin access, and adds the two missing indexes. It must only run after the missing `sports_member_history` creation migration is restored and the schema chain is reproduced. This still does not make it a complete audit log; official result changes, permission changes, exports, financial operations, and privileged support access need their own event coverage.
 
 ## 8. Supabase Advisor results
 
