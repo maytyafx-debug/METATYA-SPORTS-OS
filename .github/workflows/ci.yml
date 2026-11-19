@@ -29,8 +29,8 @@ jobs:
         run: npm run typecheck
       - name: ESLint
         run: npm run lint
-      - name: Tenant authorization tests
-        run: npm run test:security
+      - name: Tenant authorization and volleyball scoring tests
+        run: npm test
       - name: Production dependency audit
         run: npm audit --omit=dev
       - name: Production build
