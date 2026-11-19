@@ -19,7 +19,7 @@ export default function DashboardPage(){
  const[events,setEvents]=useState<SportEvent[]>([]);
  const[results,setResults]=useState<SportResult[]>([]);
  const[memberName,setMemberName]=useState("");
- const[sportType,setSportType]=useState("والیبال");
+ const[sportType,setSportType]=useState("تیراندازی");
  const[birthDate,setBirthDate]=useState("");
  const[membershipNumber,setMembershipNumber]=useState("");
  const[category,setCategory]=useState("");
