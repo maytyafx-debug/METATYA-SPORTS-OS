@@ -192,7 +192,7 @@ export default function VolleyballPage() {
   const selectedMembership = memberships.find(m => m.tenant_id === tenantId);
   return <>
     <header className="topbar"><div className="shell topbar-inner">
-      <div><div className="brand">METATYA EXPERT OS · VOLLEYBALL</div><small>ماژول والیبال در سامانه جامع Sports OS</small></div>
+      <div><div className="brand">METATYA EXPERT OS · VOLLEYBALL</div><small>ماژول والیبال در سامانه جامع METATYA EXPERT OS</small></div>
       <div className="topbar-inner"><Link className="btn secondary" href="/">داشبورد مادر</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
     </div></header>
     <main className="shell grid">
