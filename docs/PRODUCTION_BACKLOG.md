@@ -39,3 +39,26 @@
 - [ ] آزمون دو کاربر و دو tenant همچنان پیش‌نیاز rollout گسترده‌تر است؛ در بک‌لاگ امنیتی باقی می‌ماند.
 
 این فاز فقط Deploy محدود/آزمایشی را مجاز می‌کند؛ Production عمومی و داده واقعی همچنان مسدود هستند.
+
+
+## Phase 0 — verified baseline audit (2026-11-19)
+
+- [x] Repository, route, and current PR inventory recorded in `SPORTS_OS_PHASE_0_BASELINE_AUDIT.md`.
+- [x] Connected Supabase migration ledger and current sports schema inspected read-only.
+- [x] API/RLS role mismatches documented.
+- [x] Sensitive `sports_members.phone` and `birth_date` fields identified; a separate private-data table and column-level access proposal added to the pending security migration.
+- [x] Supabase Security and Performance Advisor findings captured.
+- [ ] Recover missing historical migration SQL sources and reconcile the local migration chain with the live ledger.
+- [ ] Verify the proposed timestamped security migration in an isolated Supabase-compatible database.
+- [ ] Add two-tenant/two-user positive and negative RLS integration tests.
+- [ ] Validate private-field data-copy counts, grants, access policies, and rollback in isolation.
+- [ ] Perform an isolated backup/restore drill.
+- [ ] Decide whether the current shared Supabase project is transitional or whether Sports OS requires a separate project/database boundary before public production.
+
+## Confirmed scope boundaries
+
+- No live Supabase schema, policies, rows, Auth settings, or secrets were changed during Phase 0.
+- No existing PR was merged.
+- The live project is non-empty; treat all existing sports data as production-sensitive.
+- Legacy non-sports tables and global Auth settings remain outside this phase and must not be modified as part of Sports OS hardening.
+- The new migration is proposed only; do not apply it until the migration-source recovery and isolated test gates pass.
