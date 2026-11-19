@@ -2,9 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feat/volleyball-operational-module-v1
   pull_request:
-    branches: [main]
+    branches:
+      - main
+      - fix/tenant-security-role-alignment
 
 permissions:
   contents: read
