@@ -9,10 +9,11 @@ import { validateVolleyballMatchScore, type VolleyballSetScore } from "@/lib/spo
 type Membership = { tenant_id: string; role: string; sports_tenants: { id: string; name: string; slug: string } | null };
 type Member = { id: string; full_name: string; sport_type: string | null; status: string };
 type Team = { id: string; name: string; gender: string; age_group: string | null; category: string | null; season: string | null; home_venue: string | null; status: string };
-type Match = { id: string; home_team_id: string; away_team_id: string; scheduled_at: string; venue: string | null; best_of: 3 | 5; status: string; result_status: string; approved_at: string | null };
+type Competition = { id: string; name: string; format: string; season: string | null; status: string; start_date: string | null; end_date: string | null };
+type Match = { id: string; competition_id: string | null; home_team_id: string; away_team_id: string; scheduled_at: string; venue: string | null; best_of: 3 | 5; status: string; result_status: string; approved_at: string | null };
 type MatchSet = { match_id: string; set_number: number; home_points: number; away_points: number };
 type Player = { id: string; member_id: string; jersey_number: number | null; position: string; is_captain: boolean; sports_members: { full_name: string } | null };
-type ApiPayload = { error?: string; details?: string[]; memberships?: Membership[]; teams?: Team[]; team?: Team; matches?: Match[]; sets?: MatchSet[]; members?: Member[]; players?: Player[]; ok?: boolean; result_status?: string };
+type ApiPayload = { error?: string; details?: string[]; memberships?: Membership[]; teams?: Team[]; team?: Team; competitions?: Competition[]; competition?: Competition; matches?: Match[]; sets?: MatchSet[]; members?: Member[]; players?: Player[]; ok?: boolean; result_status?: string };
 
 const positionNames: Record<string, string> = {
   setter: "پاسور", outside_hitter: "دریافت‌کننده قدرتی", opposite: "پشت‌خط‌زن",
@@ -27,11 +28,21 @@ export default function VolleyballPage() {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [sets, setSets] = useState<MatchSet[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedTeam, setSelectedTeam] = useState("");
   const [selectedMatch, setSelectedMatch] = useState("");
+  const [selectedCompetition, setSelectedCompetition] = useState("");
+  const [competitionName, setCompetitionName] = useState("");
+  const [competitionFormat, setCompetitionFormat] = useState("league");
+  const [competitionSeason, setCompetitionSeason] = useState("");
+  const [competitionStart, setCompetitionStart] = useState("");
+  const [competitionEnd, setCompetitionEnd] = useState("");
+  const [registrationTeam, setRegistrationTeam] = useState("");
+  const [poolCode, setPoolCode] = useState("");
+  const [seed, setSeed] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [teamName, setTeamName] = useState("");
@@ -64,12 +75,14 @@ export default function VolleyballPage() {
   }, [tenantId, router]);
 
   const load = useCallback(async () => {
-    const [t, m, p] = await Promise.all([
+    const [t, m, p, co] = await Promise.all([
       apiFetch("/api/sports/volleyball/teams"),
       apiFetch("/api/sports/volleyball/matches"),
       apiFetch("/api/sports/members"),
+      apiFetch("/api/sports/volleyball/competitions"),
     ]);
-    setTeams(t.teams ?? []); setMatches(m.matches ?? []); setSets(m.sets ?? []); setMembers(p.members ?? []);
+    setTeams(t.teams ?? []); setMatches(m.matches ?? []); setSets(m.sets ?? []);
+    setMembers(p.members ?? []); setCompetitions(co.competitions ?? []);
   }, [apiFetch]);
 
   useEffect(() => {
@@ -132,9 +145,25 @@ export default function VolleyballPage() {
     const p = await apiFetch(`/api/sports/volleyball/teams/${selectedTeam}/members`).catch(() => null);
     setPlayers(p?.players ?? []);
   }
+  async function createCompetition(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    await submit("/api/sports/volleyball/competitions", {
+      name:competitionName, format:competitionFormat, season:competitionSeason,
+      start_date:competitionStart || null, end_date:competitionEnd || null,
+    });
+    setCompetitionName(""); setCompetitionSeason(""); setCompetitionStart(""); setCompetitionEnd("");
+  }
+  async function registerTeam(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selectedCompetition) return;
+    await submit("/api/sports/volleyball/competitions/" + selectedCompetition + "/teams", {
+      team_id:registrationTeam, pool_code:poolCode, seed:seed || null,
+    });
+    setRegistrationTeam(""); setPoolCode(""); setSeed("");
+  }
   async function createMatch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    await submit("/api/sports/volleyball/matches", {home_team_id:homeTeam,away_team_id:awayTeam,scheduled_at:new Date(scheduledAt).toISOString(),venue:matchVenue,best_of:bestOf});
+    await submit("/api/sports/volleyball/matches", {home_team_id:homeTeam,away_team_id:awayTeam,competition_id:selectedCompetition || null,scheduled_at:new Date(scheduledAt).toISOString(),venue:matchVenue,best_of:bestOf});
     setHomeTeam(""); setAwayTeam(""); setScheduledAt(""); setMatchVenue("");
   }
   async function sendScore(e: FormEvent<HTMLFormElement>) {
@@ -159,7 +188,7 @@ export default function VolleyballPage() {
     </div></header>
     <main className="shell grid">
       <section><h1 className="page-heading">مدیریت والیبال</h1><p className="muted">باشگاه، تیم‌ها، فهرست بازیکنان، برنامه مسابقات و ثبت و تأیید نتایج</p></section>
-      {memberships.length > 1 && <section className="panel field"><label htmlFor="tenant">سازمان فعال</label><select id="tenant" value={tenantId} onChange={e=>{setTenantId(e.target.value);setTeams([]);setMatches([]);setSets([]);setPlayers([]);}}><option value="">انتخاب سازمان</option>{memberships.map(m=><option key={m.tenant_id} value={m.tenant_id}>{m.sports_tenants?.name ?? m.tenant_id} — {m.role}</option>)}</select></section>}
+      {memberships.length > 1 && <section className="panel field"><label htmlFor="tenant">سازمان فعال</label><select id="tenant" value={tenantId} onChange={e=>{setTenantId(e.target.value);setTeams([]);setMatches([]);setSets([]);setPlayers([]);setCompetitions([]);}}><option value="">انتخاب سازمان</option>{memberships.map(m=><option key={m.tenant_id} value={m.tenant_id}>{m.sports_tenants?.name ?? m.tenant_id} — {m.role}</option>)}</select></section>}
       {selectedMembership && <p className="muted">سازمان: {selectedMembership.sports_tenants?.name ?? "سازمان فعال"} | نقش: {selectedMembership.role}</p>}
       {message && <section className="panel status" role="status"><p>{message}</p></section>}
       {!tenantId && memberships.length > 1 && <section className="panel"><p>برای مشاهده اطلاعات، سازمان فعال را انتخاب کنید.</p></section>}
@@ -195,17 +224,36 @@ export default function VolleyballPage() {
             {players.length===0 && <p className="muted">برای این تیم هنوز بازیکنی ثبت نشده است.</p>}</>}
           </>}
         </section>
-        <section className="panel"><h2 className="section-title">۳. برنامه‌ریزی مسابقه</h2>
+        <section className="panel"><h2 className="section-title">۳. مدیریت رقابت‌ها و لیگ‌ها</h2>
+          <form className="form-grid" onSubmit={createCompetition}>
+            <div className="field"><label>عنوان رقابت</label><input required minLength={2} maxLength={160} value={competitionName} onChange={e=>setCompetitionName(e.target.value)} /></div>
+            <div className="field"><label>قالب رقابت</label><select value={competitionFormat} onChange={e=>setCompetitionFormat(e.target.value)}><option value="league">لیگ</option><option value="cup">جام حذفی</option><option value="round_robin">دوره‌ای</option><option value="friendly">دوستانه</option><option value="tournament">تورنمنت</option></select></div>
+            <div className="field"><label>فصل</label><input maxLength={30} value={competitionSeason} onChange={e=>setCompetitionSeason(e.target.value)} placeholder="۱۴۰۵-۱۴۰۶" /></div>
+            <div className="field"><label>تاریخ شروع</label><input type="date" value={competitionStart} onChange={e=>setCompetitionStart(e.target.value)} /></div>
+            <div className="field"><label>تاریخ پایان</label><input type="date" value={competitionEnd} onChange={e=>setCompetitionEnd(e.target.value)} /></div>
+            <div className="field full"><button className="btn" disabled={busy}>ایجاد رقابت</button></div>
+          </form>
+          {competitions.length>0 && <><div className="field"><label>رقابت فعال برای ثبت تیم</label><select value={selectedCompetition} onChange={e=>setSelectedCompetition(e.target.value)}><option value="">انتخاب رقابت</option>{competitions.map(co=><option key={co.id} value={co.id}>{co.name} · {co.season ?? co.format}</option>)}</select></div>
+          {selectedCompetition && <form className="form-grid" onSubmit={registerTeam}>
+            <div className="field"><label>تیم</label><select required value={registrationTeam} onChange={e=>setRegistrationTeam(e.target.value)}><option value="">انتخاب تیم</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+            <div className="field"><label>گروه</label><input value={poolCode} maxLength={20} onChange={e=>setPoolCode(e.target.value)} placeholder="A / B" /></div>
+            <div className="field"><label>سید</label><input type="number" min="1" max="999" value={seed} onChange={e=>setSeed(e.target.value)} /></div>
+            <div className="field"><button className="btn" disabled={busy || !registrationTeam}>ثبت تیم در رقابت</button></div>
+          </form>}</>}
+          <ul className="list">{competitions.map(co=><li key={co.id}><strong>{co.name}</strong> — {co.format} · {co.season ?? "بدون فصل"} · {co.status}</li>)}</ul>
+        </section>
+        <section className="panel"><h2 className="section-title">۴. برنامه‌ریزی مسابقه</h2>
           {teams.length<2 ? <p className="muted">برای برنامه‌ریزی مسابقه حداقل دو تیم لازم است.</p> : <form className="form-grid" onSubmit={createMatch}>
             <div className="field"><label>تیم میزبان</label><select required value={homeTeam} onChange={e=>setHomeTeam(e.target.value)}><option value="">انتخاب تیم</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
             <div className="field"><label>تیم میهمان</label><select required value={awayTeam} onChange={e=>setAwayTeam(e.target.value)}><option value="">انتخاب تیم</option>{teams.filter(t=>t.id!==homeTeam).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
             <div className="field"><label>تاریخ و ساعت</label><input required type="datetime-local" value={scheduledAt} onChange={e=>setScheduledAt(e.target.value)} /></div>
             <div className="field"><label>سالن / محل مسابقه</label><input value={matchVenue} maxLength={180} onChange={e=>setMatchVenue(e.target.value)} /></div>
+            <div className="field"><label>رقابت (اختیاری)</label><select value={selectedCompetition} onChange={e=>setSelectedCompetition(e.target.value)}><option value="">مسابقه مستقل</option>{competitions.map(co=><option key={co.id} value={co.id}>{co.name}</option>)}</select></div>
             <div className="field"><label>فرمت مسابقه</label><select value={bestOf} onChange={e=>setBestOf(Number(e.target.value) as 3|5)}><option value={5}>۳ برد از ۵ ست</option><option value={3}>۲ برد از ۳ ست</option></select></div>
             <div className="field full"><button className="btn" disabled={busy || !homeTeam || !awayTeam || homeTeam===awayTeam}>ثبت مسابقه</button></div>
           </form>}
         </section>
-        <section className="panel"><h2 className="section-title">۴. مسابقات و نتایج</h2>
+        <section className="panel"><h2 className="section-title">۵. مسابقات و نتایج</h2>
           {matches.length===0 ? <p className="muted">مسابقه‌ای ثبت نشده است.</p> : <ul className="list">{matches.map(m=><li key={m.id}>
             <strong>{teamNameOf(m.home_team_id)} — {teamNameOf(m.away_team_id)}</strong>
             <div className="muted">{new Date(m.scheduled_at).toLocaleString("fa-IR")} · {m.venue ?? "محل تعیین نشده"} · {m.best_of} ستی</div>
@@ -214,7 +262,7 @@ export default function VolleyballPage() {
             {m.result_status==="submitted" && <div className="topbar-inner" style={{justifyContent:"flex-start",marginTop:8}}><button className="btn" disabled={busy} onClick={()=>void decide(m.id,"approved")}>تأیید نتیجه</button><button className="btn secondary" disabled={busy} onClick={()=>void decide(m.id,"rejected")}>درخواست اصلاح</button></div>}
           </li>)}</ul>}
         </section>
-        <section className="panel"><h2 className="section-title">۵. ثبت امتیاز رسمی مسابقه</h2>
+        <section className="panel"><h2 className="section-title">۶. ثبت امتیاز رسمی مسابقه</h2>
           <div className="field"><label>مسابقه</label><select value={selectedMatch} onChange={e=>{setSelectedMatch(e.target.value);const m=matches.find(x=>x.id===e.target.value);setScoreSets(Array.from({length:3},()=>({home:0,away:0})));}}><option value="">انتخاب مسابقه</option>{matches.filter(m=>m.result_status!=="approved").map(m=><option key={m.id} value={m.id}>{teamNameOf(m.home_team_id)} — {teamNameOf(m.away_team_id)} · {new Date(m.scheduled_at).toLocaleDateString("fa-IR")}</option>)}</select></div>
           {chosenMatch && <form className="grid" onSubmit={sendScore}>
             {scoreSets.map((s,i)=><div className="form-grid" key={i}>
