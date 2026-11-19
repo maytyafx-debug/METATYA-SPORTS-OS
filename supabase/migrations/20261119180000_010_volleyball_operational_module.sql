@@ -58,7 +58,7 @@ create table if not exists public.sports_volleyball_matches (
   unique (id, tenant_id),
   foreign key (home_team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict,
   foreign key (away_team_id, tenant_id) references public.sports_volleyball_teams(id, tenant_id) on delete restrict,
-  foreign key (event_id, tenant_id) references public.sports_events(id, tenant_id) on delete set null
+  foreign key (event_id, tenant_id) references public.sports_events(id, tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_volleyball_match_sets (
