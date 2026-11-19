@@ -21,6 +21,12 @@
 | Athlete self-service portal and guardian consent | Shared-platform backlog | Depends on shared portal, privacy and minor safeguards |
 | Analytics, talent pathways and AI assistance | Planned | Human oversight and source provenance required |
 
+## Extended workflows
+
+Competition setup, team registration, standings derived from approved results, match lineup snapshots, and official assignment are included in this branch's schema/API work. Automated round-robin scheduling, knockout brackets, live point-by-point scoring, substitutions, timeouts, sanctions, appeals and certificates remain planned.
+
+The full shared-core and volleyball roadmap is recorded in [VOLLEYBALL_FULL_ROADMAP.md](VOLLEYBALL_FULL_ROADMAP.md).
+
 ## Data and trust rules
 
 - Every volleyball record carries a tenant identifier and is protected by forced row-level security.
