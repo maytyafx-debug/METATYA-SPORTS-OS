@@ -11,9 +11,10 @@ type Member = { id: string; full_name: string; sport_type: string | null; status
 type Team = { id: string; name: string; gender: string; age_group: string | null; category: string | null; season: string | null; home_venue: string | null; status: string };
 type Competition = { id: string; name: string; format: string; season: string | null; status: string; start_date: string | null; end_date: string | null };
 type Match = { id: string; competition_id: string | null; home_team_id: string; away_team_id: string; scheduled_at: string; venue: string | null; best_of: 3 | 5; status: string; result_status: string; approved_at: string | null };
+type Standing = { team_id: string; team_name: string; pool_code: string | null; played: number; wins: number; losses: number; match_points: number; sets_for: number; sets_against: number; points_for: number; points_against: number };
 type MatchSet = { match_id: string; set_number: number; home_points: number; away_points: number };
 type Player = { id: string; member_id: string; jersey_number: number | null; position: string; is_captain: boolean; sports_members: { full_name: string } | null };
-type ApiPayload = { error?: string; details?: string[]; memberships?: Membership[]; teams?: Team[]; team?: Team; competitions?: Competition[]; competition?: Competition; matches?: Match[]; sets?: MatchSet[]; members?: Member[]; players?: Player[]; ok?: boolean; result_status?: string };
+type ApiPayload = { error?: string; details?: string[]; memberships?: Membership[]; teams?: Team[]; team?: Team; competitions?: Competition[]; competition?: Competition; standings?: Standing[]; matches?: Match[]; sets?: MatchSet[]; members?: Member[]; players?: Player[]; ok?: boolean; result_status?: string };
 
 const positionNames: Record<string, string> = {
   setter: "پاسور", outside_hitter: "دریافت‌کننده قدرتی", opposite: "پشت‌خط‌زن",
@@ -29,6 +30,7 @@ export default function VolleyballPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [standings, setStandings] = useState<Standing[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [sets, setSets] = useState<MatchSet[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
@@ -161,6 +163,13 @@ export default function VolleyballPage() {
     });
     setRegistrationTeam(""); setPoolCode(""); setSeed("");
   }
+  async function showStandings() {
+    if (!selectedCompetition) return;
+    try {
+      const p = await apiFetch("/api/sports/volleyball/competitions/" + selectedCompetition + "/standings");
+      setStandings(p.standings ?? []);
+    } catch (e) { setMessage(e instanceof Error ? e.message : "محاسبه جدول ناموفق بود."); }
+  }
   async function createMatch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     await submit("/api/sports/volleyball/matches", {home_team_id:homeTeam,away_team_id:awayTeam,competition_id:selectedCompetition || null,scheduled_at:new Date(scheduledAt).toISOString(),venue:matchVenue,best_of:bestOf});
@@ -241,6 +250,9 @@ export default function VolleyballPage() {
             <div className="field"><button className="btn" disabled={busy || !registrationTeam}>ثبت تیم در رقابت</button></div>
           </form>}</>}
           <ul className="list">{competitions.map(co=><li key={co.id}><strong>{co.name}</strong> — {co.format} · {co.season ?? "بدون فصل"} · {co.status}</li>)}</ul>
+          {selectedCompetition && <div className="grid"><button type="button" className="btn secondary" onClick={()=>void showStandings()}>محاسبه جدول رده‌بندی بر اساس نتایج تأییدشده</button>
+            {standings.length>0 && <ul className="list">{standings.map((s,i)=><li key={s.team_id}>{i+1}. <strong>{s.team_name}</strong> {s.pool_code ? "· گروه "+s.pool_code : ""} — بازی: {s.played} · برد: {s.wins} · باخت: {s.losses} · امتیاز: {s.match_points} · ست: {s.sets_for}-{s.sets_against} · پوئن: {s.points_for}-{s.points_against}</li>)}</ul>}
+          </div>}
         </section>
         <section className="panel"><h2 className="section-title">۴. برنامه‌ریزی مسابقه</h2>
           {teams.length<2 ? <p className="muted">برای برنامه‌ریزی مسابقه حداقل دو تیم لازم است.</p> : <form className="form-grid" onSubmit={createMatch}>
