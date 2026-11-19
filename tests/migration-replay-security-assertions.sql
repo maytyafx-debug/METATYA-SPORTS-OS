@@ -51,12 +51,12 @@ begin
  begin update public.sports_members set tenant_id='10000000-0000-4000-8000-000000000002'
  where id='10000000-0000-4000-8000-000000000030';
  raise exception 'tenant reassignment should be denied'; exception when insufficient_privilege then null; end;
-end $;
+end $$;
 update public.sports_member_private set birth_date=date '2000-01-02'
  where member_id='10000000-0000-4000-8000-000000000030';
 reset role;
 
-do $ declare n integer; payload jsonb;
+do $$ declare n integer; payload jsonb;
 begin
  select count(*) into n from public.sports_member_history
  where member_id='10000000-0000-4000-8000-000000000030'
@@ -66,7 +66,7 @@ begin
  where member_id='10000000-0000-4000-8000-000000000030'
  and new_data->>'private_fields_updated'='true';
  if payload ? 'phone' or payload ? 'birth_date' then raise exception 'private data leaked into audit history'; end if;
-end $;
+end $$;
 
 set role authenticated;
 select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000011',false);
