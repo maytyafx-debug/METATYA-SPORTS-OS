@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const c = await resolveTenant(req);
   if (!c.ok) return NextResponse.json({ error: c.error }, { status: c.status });
   const { data: matches, error } = await c.supabase.from("sports_volleyball_matches")
-    .select("id,event_id,home_team_id,away_team_id,scheduled_at,venue,best_of,status,result_status,approved_at,notes,created_at")
+    .select("id,event_id,competition_id,stage_name,round_number,pool_code,match_number,home_team_id,away_team_id,scheduled_at,venue,best_of,status,result_status,approved_at,notes,created_at")
     .eq("tenant_id", c.tenantId).order("scheduled_at", { ascending: true });
   if (error) return NextResponse.json({ error: "دریافت مسابقات ناموفق بود." }, { status: 500 });
   const ids = (matches ?? []).map((m) => m.id);
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     tenant_id: c.tenantId, home_team_id: b.home_team_id, away_team_id: b.away_team_id,
     scheduled_at: new Date(b.scheduled_at).toISOString(), venue: typeof b.venue === "string" ? b.venue.trim().slice(0,180) : null,
     best_of: bestOf, created_by: c.user.id, notes: typeof b.notes === "string" ? b.notes.trim().slice(0,2000) : null,
-  }).select("id,home_team_id,away_team_id,scheduled_at,venue,best_of,status,result_status").single();
+  }).select("id,competition_id,stage_name,round_number,pool_code,match_number,home_team_id,away_team_id,scheduled_at,venue,best_of,status,result_status").single();
   if (error) return NextResponse.json({ error: "ثبت مسابقه ناموفق بود؛ تیم‌ها باید متعلق به همین سازمان باشند." }, { status: 400 });
   return NextResponse.json({ match: data }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
 }
