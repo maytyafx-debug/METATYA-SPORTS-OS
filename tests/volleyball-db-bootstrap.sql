@@ -16,6 +16,8 @@ AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
 CREATE TABLE public.sports_tenants (
   id uuid PRIMARY KEY,
   name text NOT NULL,
+  slug text NOT NULL UNIQUE,
+  status text NOT NULL DEFAULT 'active',
   created_by uuid
 );
 CREATE TABLE public.sports_tenant_memberships (
