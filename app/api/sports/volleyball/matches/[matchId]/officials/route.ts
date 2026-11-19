@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenancy/resolve-tenant";
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{3}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ROLES=["first_referee","second_referee","scorer","line_judge"];
 
 export async function GET(req:NextRequest,ctx:{params:Promise<{matchId:string}>}) {
