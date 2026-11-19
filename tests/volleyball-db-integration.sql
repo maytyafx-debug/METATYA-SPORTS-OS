@@ -1,7 +1,7 @@
 \set ON_ERROR_STOP on
-INSERT INTO public.sports_tenants(id,name) VALUES
-('00000000-0000-4000-8000-000000000001','Tenant One'),
-('00000000-0000-4000-8000-000000000002','Tenant Two');
+INSERT INTO public.sports_tenants(id,name,slug,status) VALUES
+('00000000-0000-4000-8000-000000000001','Tenant One','volleyball-tenant-one','active'),
+('00000000-0000-4000-8000-000000000002','Tenant Two','volleyball-tenant-two','active');
 
 INSERT INTO auth.users(id) VALUES
 ('00000000-0000-4000-8000-000000000010'),
