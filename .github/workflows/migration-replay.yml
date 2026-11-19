@@ -1,0 +1,45 @@
+name: Migration replay and security integration
+on:
+  push:
+    branches: [recovery/migration-history-reconciliation-v1]
+  pull_request:
+    branches: [fix/tenant-security-role-alignment]
+permissions:
+  contents: read
+jobs:
+  migration-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: sports_replay }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sports_replay"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env: { PGHOST: localhost, PGPORT: 5432, PGUSER: postgres, PGPASSWORD: postgres, PGDATABASE: sports_replay }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Bootstrap Supabase-compatible test roles and schemas
+        run: psql -v ON_ERROR_STOP=1 -f tests/migration-replay-bootstrap.sql
+      - name: Replay historical chain and proposed migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in supabase/migrations/*.sql; do
+            if [[ "$(basename "$file")" == 20261119105357_* ]]; then
+              psql -v ON_ERROR_STOP=1 -f tests/migration-replay-history-bridge.sql
+            fi
+            if [[ "$(basename "$file")" == 20261119120000_* ]]; then
+              psql -v ON_ERROR_STOP=1 -f tests/migration-replay-pre-security-seed.sql
+            fi
+            echo "Applying $file"
+            psql -v ON_ERROR_STOP=1 -f "$file"
+          done
+      - name: Verify privacy, tenant isolation and member history
+        run: psql -v ON_ERROR_STOP=1 -f tests/migration-replay-security-assertions.sql
+      - name: Verify volleyball RLS, scoring RPCs and immutable result audit
+        run: psql -v ON_ERROR_STOP=1 -f tests/volleyball-db-integration.sql
