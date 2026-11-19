@@ -38,7 +38,7 @@ test("rejects sets after a match has already been won", () => {
 });
 
 test("rejects invalid best-of format and too many sets", () => {
-  assert.equal(validateVolleyballMatchScore({bestOf:4 as 3|5,sets:[]}).valid,false);
+  assert.equal(validateVolleyballMatchScore({bestOf:4 as unknown as 3|5,sets:[]}).valid,false);
   assert.equal(validateVolleyballMatchScore({bestOf:3,sets:[
     {home:25,away:20},{home:25,away:20},{home:25,away:20},{home:0,away:0},
   ]}).valid,false);
