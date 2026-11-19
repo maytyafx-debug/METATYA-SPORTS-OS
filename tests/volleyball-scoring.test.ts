@@ -61,3 +61,10 @@ test("rejects malformed runtime payload entries without throwing", () => {
     assert.equal(result.valid, false);
   }
 });
+
+test("accepts a best-of-five 3-1 result", () => {
+  const r = validateVolleyballMatchScore({ bestOf: 5, sets: [
+    {home:25,away:18},{home:20,away:25},{home:25,away:22},{home:25,away:20},
+  ]});
+  assert.deepEqual(r, {valid:true,homeSetsWon:3,awaySetsWon:1});
+});

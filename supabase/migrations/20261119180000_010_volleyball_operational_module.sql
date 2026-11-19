@@ -228,9 +228,6 @@ create policy volleyball_matches_select on public.sports_volleyball_matches for 
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff','member']::text[])));
 create policy volleyball_matches_insert on public.sports_volleyball_matches for insert to authenticated
 with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','staff','coach']::text[])));
-create policy volleyball_matches_update on public.sports_volleyball_matches for update to authenticated
-using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee']::text[])))
-with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee']::text[])));
 create policy volleyball_matches_delete on public.sports_volleyball_matches for delete to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']::text[])));
 
@@ -246,13 +243,6 @@ using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']:
 
 create policy volleyball_sets_select on public.sports_volleyball_match_sets for select to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff','member']::text[])));
-create policy volleyball_sets_insert on public.sports_volleyball_match_sets for insert to authenticated
-with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee']::text[])));
-create policy volleyball_sets_update on public.sports_volleyball_match_sets for update to authenticated
-using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee']::text[])))
-with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee']::text[])));
-create policy volleyball_sets_delete on public.sports_volleyball_match_sets for delete to authenticated
-using ((select private.has_active_tenant_role(tenant_id, array['owner','admin']::text[])));
 
 create policy volleyball_rosters_select on public.sports_volleyball_match_rosters for select to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee','coach','staff']::text[])));
@@ -271,9 +261,13 @@ with check ((select private.has_active_tenant_role(tenant_id, array['owner','adm
 
 grant select, insert, update, delete on public.sports_volleyball_teams,
   public.sports_volleyball_competitions, public.sports_volleyball_competition_teams,
-  public.sports_volleyball_team_members, public.sports_volleyball_matches,
-  public.sports_volleyball_match_sets, public.sports_volleyball_match_rosters,
+  public.sports_volleyball_team_members, public.sports_volleyball_match_rosters,
   public.sports_volleyball_match_officials to authenticated;
+-- Match result state and set rows are writable only through the transactional RPCs.
+grant select, insert, delete on public.sports_volleyball_matches to authenticated;
+grant select on public.sports_volleyball_match_sets to authenticated;
+revoke update on public.sports_volleyball_matches from authenticated;
+revoke insert, update, delete on public.sports_volleyball_match_sets from authenticated;
 grant select, insert on public.sports_volleyball_result_audit to authenticated;
 -- Explicitly deny PUBLIC/anonymous access. The audit table is read-only to
 -- authenticated clients; inserts are performed by the SECURITY DEFINER RPCs.
@@ -432,7 +426,9 @@ begin
   select * into v_match from public.sports_volleyball_matches
   where id=p_match_id and tenant_id=p_tenant_id for update;
   if not found then raise exception 'match not found' using errcode='P0002'; end if;
-  if v_match.result_status='approved' then raise exception 'approved result is locked' using errcode='55000'; end if;
+  if v_match.result_status not in ('pending','rejected') then
+    raise exception 'result is already submitted or locked' using errcode='55000';
+  end if;
   if p_sets is null or jsonb_typeof(p_sets)<>'array' then raise exception 'sets must be a JSON array' using errcode='22023'; end if;
   if jsonb_array_length(p_sets)<1 or jsonb_array_length(p_sets)>v_match.best_of then
     raise exception 'invalid number of sets' using errcode='22023';
