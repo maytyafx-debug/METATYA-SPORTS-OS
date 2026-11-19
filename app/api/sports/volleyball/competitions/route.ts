@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const c = await resolveTenant(req);
   if (!c.ok) return NextResponse.json({error:c.error},{status:c.status});
   const {data,error}=await c.supabase.from("sports_volleyball_competitions")
-    .select("id,name,format,season,start_date,end_date,status,points_win_3_0,points_win_3_2,points_loss_2_3,points_loss_0_3,description")
+    .select("id,name,format,season,start_date,end_date,status,points_win_clear,points_win_narrow,points_loss_narrow,points_loss_clear,description")
     .eq("tenant_id",c.tenantId).order("start_date",{ascending:true});
   if(error)return NextResponse.json({error:"دریافت رقابت‌ها ناموفق بود."},{status:500});
   return NextResponse.json({competitions:data??[]},{headers:{"Cache-Control":"private, no-store"}});
