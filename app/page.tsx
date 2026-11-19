@@ -4,7 +4,7 @@ import {useRouter} from "next/navigation";
 import {createSupabaseBrowserClient} from "@/lib/supabase/client";
 
 type Membership={tenant_id:string;role:string;sports_tenants:{id:string;name:string;slug:string}|null};
-type Member={id:string;full_name:string;sport_type:string|null;status:string};
+type Member={id:string;full_name:string;sport_type:string|null;birth_date:string|null;membership_number:string|null;category:string|null;status:string};
 type SportEvent={id:string;title:string;sport_type:string|null;event_date:string;location:string|null;status:string};
 type SportResult={id:string;member_id:string;event_id:string;score:number|null;rank:number|null;notes:string|null;created_at:string};
 type Payload={error?:string;members?:Member[];events?:SportEvent[];results?:SportResult[]};
@@ -20,6 +20,9 @@ export default function DashboardPage(){
  const[results,setResults]=useState<SportResult[]>([]);
  const[memberName,setMemberName]=useState("");
  const[sportType,setSportType]=useState("والیبال");
+ const[birthDate,setBirthDate]=useState("");
+ const[membershipNumber,setMembershipNumber]=useState("");
+ const[category,setCategory]=useState("");
  const[eventTitle,setEventTitle]=useState("");
  const[eventDate,setEventDate]=useState("");
  const[resultMember,setResultMember]=useState("");
@@ -89,8 +92,8 @@ export default function DashboardPage(){
  async function submitMember(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setBusy(true);setMessage("");
   try{
-   await post("/api/sports/members",{full_name:memberName,sport_type:sportType});
-   setMemberName("");await loadData();setMessage("عضو با موفقیت ثبت شد.");
+   await post("/api/sports/members",{full_name:memberName,sport_type:sportType,birth_date:birthDate||null,membership_number:membershipNumber.trim()||null,category:category.trim()||null});
+   setMemberName("");setBirthDate("");setMembershipNumber("");setCategory("");await loadData();setMessage("عضو با موفقیت ثبت شد.");
   }catch(err){setMessage(err instanceof Error?err.message:"ثبت عضو ناموفق بود.");}
   finally{setBusy(false);}
  }
@@ -152,6 +155,9 @@ export default function DashboardPage(){
      <form className="form-grid" onSubmit={submitMember}>
       <div className="field"><label htmlFor="member-name">نام عضو</label><input id="member-name" required maxLength={150} minLength={2} value={memberName} onChange={e=>setMemberName(e.target.value)}/></div>
       <div className="field"><label htmlFor="sport-type">رشته ورزشی</label><input id="sport-type" maxLength={100} value={sportType} onChange={e=>setSportType(e.target.value)}/></div>
+      <div className="field"><label htmlFor="birth-date">تاریخ تولد</label><input id="birth-date" type="date" value={birthDate} onChange={e=>setBirthDate(e.target.value)}/></div>
+      <div className="field"><label htmlFor="membership-number">شماره عضویت</label><input id="membership-number" maxLength={50} value={membershipNumber} onChange={e=>setMembershipNumber(e.target.value)}/></div>
+      <div className="field"><label htmlFor="member-category">رده</label><input id="member-category" maxLength={100} value={category} onChange={e=>setCategory(e.target.value)}/></div>
       <div className="field full"><button className="btn" disabled={busy}>ثبت عضو</button></div>
      </form>
     </section>
