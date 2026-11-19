@@ -1,7 +1,7 @@
 # METATYA Sports OS — Tenant Security Contract
 
 **Status:** Proposed code and migration hardening; not yet applied or runtime-verified.
-**Migration file:** `20261119120000_sports_tenant_security_alignment.sql`.
+**Proposed migrations:** `20261119120000_sports_tenant_security_alignment.sql` and `20261119150000_sports_member_history_hardening.sql`.
 **Migration gate:** The live Supabase ledger contains applied migrations whose SQL source files are missing from the repository. Restore and reconcile those sources before applying this migration, even in a staging environment.
 
 ## Canonical tenant roles
@@ -38,7 +38,7 @@ The proposed follow-on migration:
 - Restricts private-field access to owner/admin until a more granular qualified-professional permission model is approved.
 - Limits authenticated access to `sports_members` to non-sensitive directory columns.
 - Keeps the original columns in place for rollback; they are no longer granted to authenticated users.
-- Forces RLS on `sports_member_history`, revokes anon access, and limits authenticated access to select/insert under owner/admin policies.
+- A separate follow-on migration forces RLS on `sports_member_history`, revokes anon access, and limits authenticated access to select/insert under owner/admin policies.
 
 This is a proposed migration only. Verify copied row counts, column grants, RLS behavior, rollback, and API compatibility in an isolated database before applying it anywhere with real data.
 
