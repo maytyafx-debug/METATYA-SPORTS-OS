@@ -1,6 +1,6 @@
 # Volleyball Module — Operational Scope
 
-**Parent product:** METATYA Sports OS  
+**Parent product:** METATYA EXPERT OS  
 **Module boundary:** Volleyball rules, team rosters, fixtures, match scoring and result approval. Shared identity, tenants, athlete directory, roles, audit and platform operations remain in Sports OS.
 
 ## Delivery status (2026-11-19)
