@@ -29,8 +29,22 @@ export async function POST(req: NextRequest) {
       typeof b.scheduled_at !== "string" || Number.isNaN(Date.parse(b.scheduled_at)))
     return NextResponse.json({ error: "تیم میزبان، میهمان و زمان معتبر مسابقه الزامی است." }, { status: 400 });
   const bestOf = b.best_of === 3 ? 3 : 5;
+  const competitionId = typeof b.competition_id === "string" && UUID.test(b.competition_id) ? b.competition_id : null;
+  if (competitionId) {
+    const { data: registrations, error: registrationError } = await c.supabase
+      .from("sports_volleyball_competition_teams").select("team_id")
+      .eq("tenant_id", c.tenantId).eq("competition_id", competitionId)
+      .eq("status", "registered").in("team_id", [b.home_team_id, b.away_team_id]);
+    if (registrationError || (registrations ?? []).length !== 2)
+      return NextResponse.json({ error: "هر دو تیم باید ابتدا در همین رقابت ثبت‌نام شده باشند." }, { status: 400 });
+  }
   const { data, error } = await c.supabase.from("sports_volleyball_matches").insert({
     tenant_id: c.tenantId, home_team_id: b.home_team_id, away_team_id: b.away_team_id,
+    competition_id: competitionId,
+    stage_name: typeof b.stage_name === "string" ? b.stage_name.trim().slice(0,80) : null,
+    round_number: Number.isInteger(b.round_number) && b.round_number > 0 ? b.round_number : null,
+    pool_code: typeof b.pool_code === "string" ? b.pool_code.trim().slice(0,20) : null,
+    match_number: typeof b.match_number === "string" ? b.match_number.trim().slice(0,40) : null,
     scheduled_at: new Date(b.scheduled_at).toISOString(), venue: typeof b.venue === "string" ? b.venue.trim().slice(0,180) : null,
     best_of: bestOf, created_by: c.user.id, notes: typeof b.notes === "string" ? b.notes.trim().slice(0,2000) : null,
   }).select("id,competition_id,stage_name,round_number,pool_code,match_number,home_team_id,away_team_id,scheduled_at,venue,best_of,status,result_status").single();
