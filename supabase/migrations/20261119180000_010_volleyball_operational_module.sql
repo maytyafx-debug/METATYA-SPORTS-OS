@@ -296,11 +296,11 @@ create or replace function public.sports_volleyball_reject_audit_mutation()
 returns trigger
 language plpgsql
 set search_path = pg_catalog
-as $
+as $$
 begin
   raise exception 'volleyball result audit is append-only' using errcode = '42501';
 end;
-$;
+$$;
 
 drop trigger if exists sports_volleyball_result_audit_immutable
   on public.sports_volleyball_result_audit;
@@ -380,7 +380,7 @@ for each row execute function public.sports_volleyball_validate_match_roster();
 
 
 create or replace function public.sports_volleyball_validate_competition_match()
-returns trigger language plpgsql security definer set search_path = pg_catalog as $
+returns trigger language plpgsql security definer set search_path = pg_catalog as $$
 begin
   if new.competition_id is not null then
     if not exists (
@@ -397,7 +397,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 revoke all on function public.sports_volleyball_validate_competition_match() from public, anon, authenticated;
 drop trigger if exists sports_volleyball_competition_match_check on public.sports_volleyball_matches;
 create trigger sports_volleyball_competition_match_check
