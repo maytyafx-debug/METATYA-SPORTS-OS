@@ -29,6 +29,19 @@ The member role does not receive access to the general sports_members directory 
 8. Tenant identity on sports records and the identity pair on memberships are immutable.
 9. A tenant cannot lose its last active owner through membership update/delete.
 
+## Sensitive member data boundary
+
+The live member table contains direct-contact and date-of-birth fields. RLS is row-level and does not hide individual columns. Therefore, broadening directory read access without a separate field boundary would expose private columns through direct Data API queries.
+
+The proposed follow-on migration:
+- Copies `phone` and `birth_date` into `sports_member_private` without deleting the source values.
+- Restricts private-field access to owner/admin until a more granular qualified-professional permission model is approved.
+- Limits authenticated access to `sports_members` to non-sensitive directory columns.
+- Keeps the original columns in place for rollback; they are no longer granted to authenticated users.
+- Forces RLS on `sports_member_history`, revokes anon access, and limits authenticated access to select/insert under owner/admin policies.
+
+This is a proposed migration only. Verify copied row counts, column grants, RLS behavior, rollback, and API compatibility in an isolated database before applying it anywhere with real data.
+
 ## Important boundaries
 
 - Tenant creation and first-owner bootstrap are not exposed as a public API in this change. They remain a controlled operator/onboarding task.
