@@ -47,6 +47,7 @@
 - [x] Connected Supabase migration ledger and current sports schema inspected read-only.
 - [x] API/RLS role mismatches documented.
 - [x] Sensitive `sports_members.phone` and `birth_date` fields identified; a separate private-data table and column-level access proposal added to the pending security migration.
+- [x] Member-history hardening and missing foreign-key indexes separated into a follow-on migration.
 - [x] Supabase Security and Performance Advisor findings captured.
 - [ ] Recover missing historical migration SQL sources and reconcile the local migration chain with the live ledger.
 - [ ] Verify the proposed timestamped security migration in an isolated Supabase-compatible database.
