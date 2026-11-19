@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:security": "node --experimental-strip-types --test tests/tenant-permissions.test.ts"
   },
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=22.6.0"
   },
   "dependencies": {
     "@supabase/ssr": "0.7.0",
