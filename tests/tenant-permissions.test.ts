@@ -8,7 +8,7 @@ import {
   hasTenantCapability,
 } from "../lib/tenancy/permissions.ts";
 
-test("canonical role capabilities", () => {
+test("canonical role capabilities match the RLS contract", () => {
   assert.equal(canCreateMember("owner"), true);
   assert.equal(canCreateMember("admin"), true);
   assert.equal(canCreateMember("staff"), true);
@@ -18,9 +18,15 @@ test("canonical role capabilities", () => {
 
   assert.equal(canCreateEvent("coach"), true);
   assert.equal(canCreateEvent("referee"), false);
+  assert.equal(canCreateEvent("member"), false);
   assert.equal(canCreateResult("referee"), true);
   assert.equal(canCreateResult("coach"), true);
   assert.equal(canCreateResult("member"), false);
+
+  assert.equal(hasTenantCapability("owner", "events:delete"), true);
+  assert.equal(hasTenantCapability("admin", "events:delete"), false);
+  assert.equal(hasTenantCapability("owner", "results:delete"), true);
+  assert.equal(hasTenantCapability("admin", "results:delete"), false);
 
   assert.equal(canManageMemberships("owner"), true);
   assert.equal(canManageMemberships("admin"), true);
