@@ -1,5 +1,9 @@
 # Ilam Sports Source Register
 
+## Parent–child ownership
+
+All material in this register is assigned to the METATYA SPORTS OS child core, under the METATYA parent platform. It must not be treated as a separate top-level project or as material owned by a different METATYA core.
+
 **Destination repository:** maytyafx-debug/METATYA-SPORTS-OS  
 **Prepared:** 2026-11-19
 
