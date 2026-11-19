@@ -275,6 +275,38 @@ grant select, insert, update, delete on public.sports_volleyball_teams,
   public.sports_volleyball_match_sets, public.sports_volleyball_match_rosters,
   public.sports_volleyball_match_officials to authenticated;
 grant select, insert on public.sports_volleyball_result_audit to authenticated;
+-- Explicitly deny PUBLIC/anonymous access. The audit table is read-only to
+-- authenticated clients; inserts are performed by the SECURITY DEFINER RPCs.
+revoke all privileges on table
+  public.sports_volleyball_teams,
+  public.sports_volleyball_team_members,
+  public.sports_volleyball_competitions,
+  public.sports_volleyball_competition_teams,
+  public.sports_volleyball_matches,
+  public.sports_volleyball_match_sets,
+  public.sports_volleyball_match_rosters,
+  public.sports_volleyball_match_officials,
+  public.sports_volleyball_result_audit
+from public, anon;
+
+revoke insert, update, delete on public.sports_volleyball_result_audit from authenticated;
+grant select on public.sports_volleyball_result_audit to authenticated;
+
+create or replace function public.sports_volleyball_reject_audit_mutation()
+returns trigger
+language plpgsql
+set search_path = pg_catalog
+as $
+begin
+  raise exception 'volleyball result audit is append-only' using errcode = '42501';
+end;
+$;
+
+drop trigger if exists sports_volleyball_result_audit_immutable
+  on public.sports_volleyball_result_audit;
+create trigger sports_volleyball_result_audit_immutable
+before update or delete on public.sports_volleyball_result_audit
+for each row execute function public.sports_volleyball_reject_audit_mutation();
 
 -- Tenant identity cannot be changed after creation.
 create or replace function public.sports_volleyball_prevent_tenant_change()
