@@ -98,6 +98,9 @@ begin
   end if;
 
   if removing_owner then
+    -- Serialize owner-removal checks for this tenant.
+    perform pg_advisory_xact_lock(hashtextextended(old.tenant_id::text, 0));
+
     select count(*)::integer
       into remaining_owners
     from public.sports_tenant_memberships as m
