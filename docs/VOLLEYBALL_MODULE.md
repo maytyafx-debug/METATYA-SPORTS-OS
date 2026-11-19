@@ -23,7 +23,7 @@
 
 ## Extended workflows
 
-Competition setup, team registration, standings derived from approved results, match lineup snapshots, and official assignment are included in this branch's schema/API work. Automated round-robin scheduling, knockout brackets, live point-by-point scoring, substitutions, timeouts, sanctions, appeals and certificates remain planned.
+Competition setup, team registration, standings derived from approved results, match lineup snapshots, and referee/official assignment APIs are included in this branch's schema/API work. Automated round-robin scheduling, knockout brackets, live point-by-point scoring, substitutions, timeouts, sanctions, appeals and certificates remain planned.
 
 The full shared-core and volleyball roadmap is recorded in [VOLLEYBALL_FULL_ROADMAP.md](VOLLEYBALL_FULL_ROADMAP.md).
 
