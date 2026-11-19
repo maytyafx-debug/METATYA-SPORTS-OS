@@ -1,7 +1,7 @@
 import type {NextRequest} from "next/server";
 import {createSupabaseServerClient} from "@/lib/supabase/server";
 
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{3}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function resolveTenant(request:NextRequest){
  const supabase=await createSupabaseServerClient();
