@@ -1,6 +1,7 @@
 "use client";
 import {FormEvent,useCallback,useEffect,useState} from "react";
 import {useRouter} from "next/navigation";
+import Link from "next/link";
 import {createSupabaseBrowserClient} from "@/lib/supabase/client";
 
 type Membership={tenant_id:string;role:string;sports_tenants:{id:string;name:string;slug:string}|null};
@@ -130,7 +131,7 @@ export default function DashboardPage(){
  return <>
   <header className="topbar"><div className="shell topbar-inner">
    <div><div className="brand">METATYA Sports OS</div><small>سامانه عمومی مدیریت باشگاه‌های ورزشی</small></div>
-   <button className="btn secondary" onClick={signOut}>خروج</button>
+   <div className="topbar-inner"><Link className="btn secondary" href="/volleyball">آزمایش ماژول والیبال</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
   </div></header>
   <main className="shell grid">
    <section><h1 className="page-heading">داشبورد مدیریتی</h1><p className="muted">مدیریت اعضا، رویدادها و نتایج باشگاه</p></section>
