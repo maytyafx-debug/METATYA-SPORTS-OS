@@ -46,11 +46,12 @@ language plpgsql
 set search_path = pg_catalog
 as $$
 begin
-  if new.tenant_id is distinct from old.tenant_id
-     or (tg_table_name = 'sports_tenant_memberships'
-         and new.user_id is distinct from old.user_id) then
-    raise exception 'tenant and membership identity are immutable'
-      using errcode = '42501';
+  if new.tenant_id is distinct from old.tenant_id then
+    raise exception 'tenant_id is immutable' using errcode = '42501';
+  end if;
+  if tg_table_name = 'sports_tenant_memberships'
+     and new.user_id is distinct from old.user_id then
+    raise exception 'membership user_id is immutable' using errcode = '42501';
   end if;
   return new;
 end;
@@ -86,15 +87,14 @@ declare
   remaining_owners integer;
   removing_owner boolean;
 begin
-  removing_owner :=
-    old.role = 'owner'
-    and old.status = 'active'
-    and (
-      tg_op = 'DELETE'
-      or new.role is distinct from old.role
+  removing_owner := old.role = 'owner' and old.status = 'active';
+  if tg_op = 'UPDATE' then
+    removing_owner := removing_owner and (
+      new.role is distinct from old.role
       or new.status is distinct from old.status
       or new.user_id is distinct from old.user_id
     );
+  end if;
 
   if removing_owner then
     select count(*)::integer
