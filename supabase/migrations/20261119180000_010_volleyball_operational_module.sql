@@ -149,9 +149,6 @@ create index if not exists sports_volleyball_team_members_tenant_member_idx on p
 create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);
 create index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);
 create index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);
-create index if not exists sports_volleyball_competitions_tenant_status_idx on public.sports_volleyball_competitions(tenant_id,status,start_date);
-create index if not exists sports_volleyball_competition_teams_tenant_comp_idx on public.sports_volleyball_competition_teams(tenant_id,competition_id,status);
-create index if not exists sports_volleyball_matches_tenant_competition_idx on public.sports_volleyball_matches(tenant_id,competition_id,scheduled_at);
 create index if not exists sports_volleyball_matches_tenant_schedule_idx on public.sports_volleyball_matches(tenant_id,scheduled_at);
 create index if not exists sports_volleyball_matches_tenant_status_idx on public.sports_volleyball_matches(tenant_id,status,result_status);
 create index if not exists sports_volleyball_sets_tenant_match_idx on public.sports_volleyball_match_sets(tenant_id,match_id,set_number);
@@ -249,6 +246,7 @@ create policy volleyball_result_audit_insert on public.sports_volleyball_result_
 with check ((select private.has_active_tenant_role(tenant_id, array['owner','admin','referee']::text[])));
 
 grant select, insert, update, delete on public.sports_volleyball_teams,
+  public.sports_volleyball_competitions, public.sports_volleyball_competition_teams,
   public.sports_volleyball_team_members, public.sports_volleyball_matches,
   public.sports_volleyball_match_sets, public.sports_volleyball_match_rosters to authenticated;
 grant select, insert on public.sports_volleyball_result_audit to authenticated;
