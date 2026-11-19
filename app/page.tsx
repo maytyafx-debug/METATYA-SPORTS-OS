@@ -60,8 +60,8 @@ export default function DashboardPage(){
     const{data:{user}}=await supabase.auth.getUser();
     if(!user){router.replace("/login");return;}
     const{data,error}=await supabase.from("sports_tenant_memberships")
-     .select("tenant_id,role,sports_tenants(id,name,slug)")
-     .eq("user_id",user.id).eq("status","active");
+     .select("tenant_id,role,sports_tenants!inner(id,name,slug,status)")
+     .eq("user_id",user.id).eq("status","active").eq("sports_tenants.status","active");
     if(error)throw error;
     if(!data?.length){setMessage("حساب شما هنوز به هیچ سازمان فعالی متصل نشده است.");return;}
     const rows=data as unknown as Membership[];
