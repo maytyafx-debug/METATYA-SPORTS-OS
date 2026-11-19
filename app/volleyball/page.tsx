@@ -151,7 +151,7 @@ export default function VolleyballPage() {
   const selectedMembership = memberships.find(m => m.tenant_id === tenantId);
   return <>
     <header className="topbar"><div className="shell topbar-inner">
-      <div><div className="brand">METATYA · VOLLEYBALL</div><small>ماژول والیبال در سامانه جامع Sports OS</small></div>
+      <div><div className="brand">METATYA EXPERT OS · VOLLEYBALL</div><small>ماژول والیبال در سامانه جامع Sports OS</small></div>
       <div className="topbar-inner"><Link className="btn secondary" href="/">داشبورد مادر</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
     </div></header>
     <main className="shell grid">
@@ -219,7 +219,7 @@ export default function VolleyballPage() {
               <div className="field"><label>ست {i+1} — {teamNameOf(chosenMatch.away_team_id)}</label><input type="number" min="0" max="99" required value={s.away} onChange={e=>setScoreSets(cur=>cur.map((x,j)=>j===i?{...x,away:Number(e.target.value)}:x))} /></div>
             </div>)}
             <div className="topbar-inner" style={{justifyContent:"flex-start"}}><button type="button" className="btn secondary" disabled={scoreSets.length>=chosenMatch.best_of} onClick={()=>setScoreSets(cur=>[...cur,{home:0,away:0}])}>افزودن ست</button><button type="button" className="btn secondary" disabled={scoreSets.length<=3} onClick={()=>setScoreSets(cur=>cur.slice(0,-1))}>حذف ست آخر</button></div>
-            {validation && !validation.valid && <div className="error">{validation.errors.join(" · ")}</div>}
+            {validation && validation.valid === false && <div className="error">{validation.errors.join(" · ")}</div>}
             {validation?.valid && <p role="status">امتیاز معتبر است: {validation.homeSetsWon} بر {validation.awaySetsWon}. پس از ثبت، برای تأیید مدیر ارسال می‌شود.</p>}
             <button className="btn" disabled={busy || !validation?.valid}>ثبت و ارسال نتیجه برای تأیید</button>
           </form>}
