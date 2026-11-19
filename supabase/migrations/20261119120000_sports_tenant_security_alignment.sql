@@ -63,10 +63,7 @@ insert into public.sports_member_private (member_id, tenant_id, phone, birth_dat
 select id, tenant_id, phone, birth_date
 from public.sports_members
 where phone is not null or birth_date is not null
-on conflict (member_id, tenant_id) do update
-set phone = excluded.phone,
-    birth_date = excluded.birth_date,
-    updated_at = now();
+on conflict (member_id, tenant_id) do nothing;
 
 create or replace function public.sports_prevent_tenant_change()
 returns trigger
@@ -168,8 +165,6 @@ alter table public.sports_results enable row level security;
 alter table public.sports_results force row level security;
 alter table public.sports_member_private enable row level security;
 alter table public.sports_member_private force row level security;
-alter table public.sports_member_history enable row level security;
-alter table public.sports_member_history force row level security;
 
 drop policy if exists sports_tenants_select_member on public.sports_tenants;
 drop policy if exists sports_tenants_select_active_member on public.sports_tenants;
@@ -266,16 +261,6 @@ create policy sports_member_private_delete_owner
 on public.sports_member_private for delete to authenticated
 using ((select private.has_active_tenant_role(tenant_id, array['owner']::text[])));
 
-drop policy if exists sports_member_history_select_admin on public.sports_member_history;
-create policy sports_member_history_select_admin
-on public.sports_member_history for select to authenticated
-using ((select private.has_active_tenant_role(tenant_id, array['owner', 'admin']::text[])));
-
-drop policy if exists sports_member_history_insert_admin on public.sports_member_history;
-create policy sports_member_history_insert_admin
-on public.sports_member_history for insert to authenticated
-with check ((select private.has_active_tenant_role(tenant_id, array['owner', 'admin']::text[])));
-
 drop policy if exists sports_events_select_member on public.sports_events;
 drop policy if exists sports_events_select_admin_referee on public.sports_events;
 create policy sports_events_select_tenant
@@ -348,16 +333,5 @@ grant delete on public.sports_members to authenticated;
 -- Sensitive member fields are available only through the separately protected table.
 revoke all on public.sports_member_private from public, anon;
 grant select, insert, update, delete on public.sports_member_private to authenticated;
-
--- History is private operational evidence; remove broad anon and mutation grants.
-revoke all on public.sports_member_history from anon;
-revoke update, delete, truncate on public.sports_member_history from authenticated;
-grant select, insert on public.sports_member_history to authenticated;
-
--- Address the two uncovered history foreign keys reported by the live advisor.
-create index if not exists sports_member_history_changed_by_idx
-  on public.sports_member_history(changed_by);
-create index if not exists sports_member_history_member_tenant_idx
-  on public.sports_member_history(member_id, tenant_id);
 
 commit;
