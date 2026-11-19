@@ -331,7 +331,7 @@ grant update (full_name, sport_type, status)
 grant delete on public.sports_members to authenticated;
 
 -- Sensitive member fields are available only through the separately protected table.
-revoke all on public.sports_member_private from public, anon;
+revoke all on public.sports_member_private from public, anon, authenticated;
 grant select, insert, update, delete on public.sports_member_private to authenticated;
 
 commit;
