@@ -130,7 +130,7 @@ export default function DashboardPage(){
 
  return <>
   <header className="topbar"><div className="shell topbar-inner">
-   <div><div className="brand">METATYA Sports OS</div><small>سامانه عمومی مدیریت باشگاه‌های ورزشی</small></div>
+   <div><div className="brand">METATYA EXPERT OS</div><small>سامانه عمومی مدیریت باشگاه‌های ورزشی</small></div>
    <div className="topbar-inner"><Link className="btn secondary" href="/volleyball">مدیریت والیبال</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
   </div></header>
   <main className="shell grid">
