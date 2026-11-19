@@ -117,3 +117,10 @@ The module must declare its schema, validation rules, permissions, and version. 
 ## Current implementation boundary
 
 The repository README describes a current baseline covering authentication, multi-tenant membership, members, events, results, API authorization, and initial dashboards. It explicitly marks finance, insurance, training, specialized portals, advanced analytics, and sport modules as roadmap items. This requirements document does not change that implementation status.
+
+
+## Shared platform requirement for every sport
+
+All sports must use one shared Sports OS platform for administration, settings, user/role/permission management, reporting and exports, audit history, backup/restore, monitoring, notifications, files, integrations, and operational controls. Sport modules may contribute their own schemas and metrics but must not implement parallel technical infrastructure.
+
+See [SPORTS_OS_SHARED_PLATFORM.md](SPORTS_OS_SHARED_PLATFORM.md) for ownership, boundaries, safeguards, and acceptance gates. These are architecture requirements, not claims that all capabilities are already implemented.
