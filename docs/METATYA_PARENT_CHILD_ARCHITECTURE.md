@@ -113,3 +113,16 @@ This document defines the intended architecture hierarchy. It does not prove tha
 ## 8. Placement in this repository
 
 This file is an architecture reference stored in the METATYA SPORTS OS repository so that Sports OS development follows the correct parent–child model. The authoritative ecosystem-level copy should ultimately be maintained in the METATYA parent architecture repository or master architecture source when that location is verified.
+
+
+## 10. Shared capabilities inside each child core
+
+Within **METATYA SPORTS OS**, every capability common to all sports belongs once in the Sports OS shared platform: administration, settings, identity/permissions, reports/exports, audit, backup/restore, monitoring, notifications, files, integrations, and operational tooling. Sport modules consume these capabilities and must not rebuild them.
+
+Within **METATYA BUSINESS OS**, the equivalent reusable capabilities belong once in the Business Kernel and are consumed by every industry module.
+
+Across sibling cores, genuinely common technical primitives must be assessed for reuse through METATYA-governed libraries, services, or versioned contracts rather than copied implementations. Domain data, tenant boundaries, permissions, deployments, and ownership remain separate.
+
+Detailed references:
+- [Sports OS shared platform](SPORTS_OS_SHARED_PLATFORM.md)
+- [Business OS shared kernel](https://github.com/maytyafx-debug/METATYA-BUSINESS-OS/blob/main/docs/architecture/BUSINESS_OS_SHARED_KERNEL.md)
