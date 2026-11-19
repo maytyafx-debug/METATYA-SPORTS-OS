@@ -46,10 +46,10 @@ create table if not exists public.sports_volleyball_competitions (
   start_date date,
   end_date date,
   status varchar(20) not null default 'draft' check (status in ('draft','registration','in_progress','completed','cancelled')),
-  points_win_3_0 smallint not null default 3 check (points_win_3_0 between 0 and 10),
-  points_win_3_2 smallint not null default 2 check (points_win_3_2 between 0 and 10),
-  points_loss_2_3 smallint not null default 1 check (points_loss_2_3 between 0 and 10),
-  points_loss_0_3 smallint not null default 0 check (points_loss_0_3 between 0 and 10),
+  points_win_clear smallint not null default 3 check (points_win_clear between 0 and 10),
+  points_win_narrow smallint not null default 2 check (points_win_narrow between 0 and 10),
+  points_loss_narrow smallint not null default 1 check (points_loss_narrow between 0 and 10),
+  points_loss_clear smallint not null default 0 check (points_loss_clear between 0 and 10),
   description varchar(2000),
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
@@ -345,6 +345,32 @@ drop trigger if exists sports_volleyball_match_roster_check on public.sports_vol
 create trigger sports_volleyball_match_roster_check
 before insert or update on public.sports_volleyball_match_rosters
 for each row execute function public.sports_volleyball_validate_match_roster();
+
+
+create or replace function public.sports_volleyball_validate_competition_match()
+returns trigger language plpgsql security definer set search_path = pg_catalog as $
+begin
+  if new.competition_id is not null then
+    if not exists (
+      select 1 from public.sports_volleyball_competition_teams ct
+      where ct.tenant_id=new.tenant_id and ct.competition_id=new.competition_id
+        and ct.team_id=new.home_team_id and ct.status='registered'
+    ) or not exists (
+      select 1 from public.sports_volleyball_competition_teams ct
+      where ct.tenant_id=new.tenant_id and ct.competition_id=new.competition_id
+        and ct.team_id=new.away_team_id and ct.status='registered'
+    ) then
+      raise exception 'both match teams must be registered in the selected competition' using errcode='23514';
+    end if;
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.sports_volleyball_validate_competition_match() from public, anon, authenticated;
+drop trigger if exists sports_volleyball_competition_match_check on public.sports_volleyball_matches;
+create trigger sports_volleyball_competition_match_check
+before insert or update on public.sports_volleyball_matches
+for each row execute function public.sports_volleyball_validate_competition_match();
 
 -- Atomic score submission: validation, audit, score replacement and match state
 -- commit together or roll back together.
