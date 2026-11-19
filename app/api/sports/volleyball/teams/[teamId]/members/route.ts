@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ teamId: str
 export async function POST(req: NextRequest, ctx: { params: Promise<{ teamId: string }> }) {
   const c = await resolveTenant(req);
   if (!c.ok) return NextResponse.json({ error: c.error }, { status: c.status });
-  if (!hasTenantCapability(c.role, "members:create")) return NextResponse.json({ error: "اجازه مدیریت فهرست تیم ندارید." }, { status: 403 });
+  if (!hasTenantCapability(c.role, "members:create") && !hasTenantCapability(c.role, "events:create")) return NextResponse.json({ error: "اجازه مدیریت فهرست تیم ندارید." }, { status: 403 });
   const { teamId } = await ctx.params;
   const b = await req.json().catch(() => null);
   if (!UUID.test(teamId) || !b || typeof b.member_id !== "string" || !UUID.test(b.member_id))
