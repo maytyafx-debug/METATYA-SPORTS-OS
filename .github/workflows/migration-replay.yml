@@ -30,6 +30,9 @@ jobs:
         run: |
           set -euo pipefail
           for file in supabase/migrations/*.sql; do
+            if [[ "$(basename "$file")" == 20261119105357_* ]]; then
+              psql -v ON_ERROR_STOP=1 -f tests/migration-replay-history-bridge.sql
+            fi
             if [[ "$(basename "$file")" == 20261119120000_* ]]; then
               psql -v ON_ERROR_STOP=1 -f tests/migration-replay-pre-security-seed.sql
             fi
