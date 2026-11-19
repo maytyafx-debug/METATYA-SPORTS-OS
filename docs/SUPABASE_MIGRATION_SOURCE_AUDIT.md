@@ -8,7 +8,7 @@
 The live database migration history is ahead of and not fully represented by the repository's `supabase/migrations` directory. The current repository contains:
 - `006_sports_multitenancy.sql` (non-timestamped filename)
 - `20261117090346_sports_foreign_key_indexes.sql`
-- A proposed timestamped follow-on migration: `20261119120000_sports_tenant_security_alignment.sql`
+- Proposed timestamped follow-on migrations: `20261119120000_sports_tenant_security_alignment.sql` and `20261119150000_sports_member_history_hardening.sql`
 
 The live database has already recorded versions:
 - `20261117090249_sports_multitenancy_core`
@@ -41,10 +41,10 @@ Without the original source files, a clean environment cannot reliably reproduce
 - FORCE RLS on core Sports OS tables.
 - A separate private member-data table for phone and birth date, with a non-destructive data copy.
 - Column-level grants for the general member directory.
-- Tightened access to member-history data.
-- Missing member-history foreign-key indexes.
 
-The migration has not been applied or runtime-tested. Its schema and policy behavior must be tested in isolation, including a rollback/recovery plan, before approval.
+A separate `20261119150000_sports_member_history_hardening.sql` proposal depends on the restored member-history table and the role helper from the first migration. It forces RLS, restricts grants, and adds the two missing history foreign-key indexes.
+
+Neither migration has been applied or runtime-tested. Their schema and policy behavior must be tested in isolation, including rollback/recovery, before approval.
 
 ## Non-goals
 
