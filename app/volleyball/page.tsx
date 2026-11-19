@@ -275,13 +275,13 @@ export default function VolleyballPage() {
           </li>)}</ul>}
         </section>
         <section className="panel"><h2 className="section-title">۶. ثبت امتیاز رسمی مسابقه</h2>
-          <div className="field"><label>مسابقه</label><select value={selectedMatch} onChange={e=>{setSelectedMatch(e.target.value);const m=matches.find(x=>x.id===e.target.value);setScoreSets(Array.from({length:3},()=>({home:0,away:0})));}}><option value="">انتخاب مسابقه</option>{matches.filter(m=>m.result_status!=="approved").map(m=><option key={m.id} value={m.id}>{teamNameOf(m.home_team_id)} — {teamNameOf(m.away_team_id)} · {new Date(m.scheduled_at).toLocaleDateString("fa-IR")}</option>)}</select></div>
+          <div className="field"><label>مسابقه</label><select value={selectedMatch} onChange={e=>{setSelectedMatch(e.target.value);const m=matches.find(x=>x.id===e.target.value);setScoreSets(Array.from({length:m?.best_of===3?2:3},()=>({home:0,away:0})));}}><option value="">انتخاب مسابقه</option>{matches.filter(m=>m.result_status!=="approved").map(m=><option key={m.id} value={m.id}>{teamNameOf(m.home_team_id)} — {teamNameOf(m.away_team_id)} · {new Date(m.scheduled_at).toLocaleDateString("fa-IR")}</option>)}</select></div>
           {chosenMatch && <form className="grid" onSubmit={sendScore}>
             {scoreSets.map((s,i)=><div className="form-grid" key={i}>
               <div className="field"><label>ست {i+1} — {teamNameOf(chosenMatch.home_team_id)}</label><input type="number" min="0" max="99" required value={s.home} onChange={e=>setScoreSets(cur=>cur.map((x,j)=>j===i?{...x,home:Number(e.target.value)}:x))} /></div>
               <div className="field"><label>ست {i+1} — {teamNameOf(chosenMatch.away_team_id)}</label><input type="number" min="0" max="99" required value={s.away} onChange={e=>setScoreSets(cur=>cur.map((x,j)=>j===i?{...x,away:Number(e.target.value)}:x))} /></div>
             </div>)}
-            <div className="topbar-inner" style={{justifyContent:"flex-start"}}><button type="button" className="btn secondary" disabled={scoreSets.length>=chosenMatch.best_of} onClick={()=>setScoreSets(cur=>[...cur,{home:0,away:0}])}>افزودن ست</button><button type="button" className="btn secondary" disabled={scoreSets.length<=3} onClick={()=>setScoreSets(cur=>cur.slice(0,-1))}>حذف ست آخر</button></div>
+            <div className="topbar-inner" style={{justifyContent:"flex-start"}}><button type="button" className="btn secondary" disabled={scoreSets.length>=chosenMatch.best_of} onClick={()=>setScoreSets(cur=>[...cur,{home:0,away:0}])}>افزودن ست</button><button type="button" className="btn secondary" disabled={scoreSets.length<=(chosenMatch.best_of===3?2:3)} onClick={()=>setScoreSets(cur=>cur.slice(0,-1))}>حذف ست آخر</button></div>
             {validation && validation.valid === false && <div className="error">{validation.errors.join(" · ")}</div>}
             {validation?.valid && <p role="status">امتیاز معتبر است: {validation.homeSetsWon} بر {validation.awaySetsWon}. پس از ثبت، برای تأیید مدیر ارسال می‌شود.</p>}
             <button className="btn" disabled={busy || !validation?.valid}>ثبت و ارسال نتیجه برای تأیید</button>
