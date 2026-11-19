@@ -1,11 +1,11 @@
-# METATYA EXPERT OS — Sports Module Factory Standard
+# METATYA SPORT OS — Sports Module Factory Standard
 
 **Status:** Architecture standard proposed for review. This document defines the mandatory build and release contract for every current and future sport module. It does not claim that every control described here is already implemented.
 
 ## 1. Product and module boundary
 
-- **METATYA EXPERT OS** is the parent product and owns the shared platform contracts.
-- Sports administration is a domain capability within the parent product. Each discipline (for example, volleyball) is a module, not a separately duplicated platform.
+- **METATYA SPORT OS** is the parent product and owns the shared platform contracts.
+- METATYA SPORT OS is an independent product within the METATYA ecosystem. Each discipline (for example, volleyball) is a module within SPORT OS, not a separately duplicated platform.
 - A sport module owns only its discipline-specific rules, workflows, entities, validation, and user experience.
 - Identity, organizations/tenants, memberships, permissions, athlete/member identity, consent, audit, files, notifications, reporting, integrations, billing, facilities, backup/recovery, and operational telemetry are shared capabilities. Implement each once and expose versioned contracts.
 - Modules must not create parallel user accounts, tenant tables, permission engines, athlete directories, or duplicate admin consoles.
