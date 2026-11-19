@@ -1,8 +1,13 @@
 # Ilam Sports Systems — Reference Notes
 
-**Destination:** METATYA SPORTS OS  
+**Parent organization:** METATYA  
+**Child core:** METATYA SPORTS OS  
 **Status:** Imported reference material; not a statement of current production capability  
 **Prepared:** 2026-11-19
+
+## Position in the METATYA hierarchy
+
+This document belongs to the METATYA SPORTS OS child core. METATYA is the parent platform and owner of ecosystem-wide governance, shared standards, identity and trust policies, and cross-core services. Sports-specific capabilities belong to METATYA SPORTS OS. This is not a standalone top-level METATYA project.
 
 ## Purpose
 
