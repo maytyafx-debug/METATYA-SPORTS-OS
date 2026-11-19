@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, recovery/migration-history-reconciliation-v1, fix/tenant-security-role-alignment]
   pull_request:
-    branches: [main]
+    branches: [main, recovery/migration-history-reconciliation-v1]
 
 permissions:
   contents: read
@@ -29,6 +29,8 @@ jobs:
         run: npm run typecheck
       - name: ESLint
         run: npm run lint
+      - name: Tenant authorization tests
+        run: npm run test:security
       - name: Production dependency audit
         run: npm audit --omit=dev
       - name: Production build

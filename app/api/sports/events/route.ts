@@ -1,3 +1,34 @@
-import {NextRequest,NextResponse} from "next/server";import {resolveTenant} from "@/lib/tenancy/resolve-tenant";
-export async function GET(req:NextRequest){const c=await resolveTenant(req);if(!c.ok)return NextResponse.json({error:c.error},{status:c.status});const{data,error}=await c.supabase.from("sports_events").select("id,title,sport_type,event_date,location,status").eq("tenant_id",c.tenantId).order("event_date");if(error)return NextResponse.json({error:"دریافت رویدادها ناموفق بود."},{status:500});return NextResponse.json({events:data??[]},{headers:{"Cache-Control":"private, no-store"}});}
-export async function POST(req:NextRequest){const c=await resolveTenant(req);if(!c.ok)return NextResponse.json({error:c.error},{status:c.status});if(!["owner","admin","staff","coach"].includes(c.role))return NextResponse.json({error:"اجازه ثبت رویداد ندارید."},{status:403});const b=await req.json().catch(()=>null);if(!b||typeof b.title!=="string"||b.title.trim().length<2||typeof b.event_date!=="string"||Number.isNaN(Date.parse(b.event_date)))return NextResponse.json({error:"عنوان و تاریخ معتبر رویداد الزامی است."},{status:400});const{data,error}=await c.supabase.from("sports_events").insert({tenant_id:c.tenantId,title:b.title.trim(),sport_type:typeof b.sport_type==="string"?b.sport_type.trim():null,event_date:new Date(b.event_date).toISOString(),location:typeof b.location==="string"?b.location.trim():null}).select("id,title,sport_type,event_date,location,status").single();if(error)return NextResponse.json({error:"ثبت رویداد ناموفق بود."},{status:400});return NextResponse.json({event:data},{status:201});}
+import {NextRequest,NextResponse} from "next/server";
+import {resolveTenant} from "@/lib/tenancy/resolve-tenant";
+import {canCreateEvent} from "@/lib/tenancy/permissions";
+
+export async function GET(req:NextRequest){
+ const c=await resolveTenant(req);
+ if(!c.ok)return NextResponse.json({error:c.error},{status:c.status});
+ const{data,error}=await c.supabase.from("sports_events")
+  .select("id,title,sport_type,event_date,location,status")
+  .eq("tenant_id",c.tenantId).order("event_date");
+ if(error)return NextResponse.json({error:"دریافت رویدادها ناموفق بود."},{status:500});
+ return NextResponse.json({events:data??[]},{headers:{"Cache-Control":"private, no-store"}});
+}
+
+export async function POST(req:NextRequest){
+ const c=await resolveTenant(req);
+ if(!c.ok)return NextResponse.json({error:c.error},{status:c.status});
+ if(!canCreateEvent(c.role))return NextResponse.json({error:"اجازه ثبت رویداد ندارید."},{status:403});
+ const b=await req.json().catch(()=>null);
+ if(!b||typeof b!=="object"||Array.isArray(b)||typeof b.title!=="string"||
+    b.title.trim().length<2||b.title.trim().length>200||
+    typeof b.event_date!=="string"||Number.isNaN(Date.parse(b.event_date)))
+  return NextResponse.json({error:"عنوان و تاریخ معتبر رویداد الزامی است."},{status:400});
+ const sportType=typeof b.sport_type==="string"?b.sport_type.trim():null;
+ const location=typeof b.location==="string"?b.location.trim():null;
+ if((sportType!==null&&sportType.length>100)||(location!==null&&location.length>200))
+  return NextResponse.json({error:"اطلاعات رشته یا محل رویداد بیش از حد طولانی است."},{status:400});
+ const{data,error}=await c.supabase.from("sports_events")
+  .insert({tenant_id:c.tenantId,title:b.title.trim(),sport_type:sportType,
+   event_date:new Date(b.event_date).toISOString(),location})
+  .select("id,title,sport_type,event_date,location,status").single();
+ if(error)return NextResponse.json({error:"ثبت رویداد ناموفق بود."},{status:400});
+ return NextResponse.json({event:data},{status:201,headers:{"Cache-Control":"private, no-store"}});
+}
