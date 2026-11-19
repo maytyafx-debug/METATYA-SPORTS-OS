@@ -139,7 +139,7 @@ export default function VolleyballPage() {
   }
   async function sendScore(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!chosenMatch || !validation?.valid) { setMessage(validation?.errors.join("، ") ?? "مسابقه را انتخاب کنید."); return; }
+    if (!chosenMatch || !validation || validation.valid === false) {\n      setMessage(validation && validation.valid === false ? validation.errors.join("، ") : "مسابقه را انتخاب کنید.");\n      return;\n    }
     await submit(`/api/sports/volleyball/matches/${chosenMatch.id}/score`, {sets:scoreSets});
   }
   async function decide(matchId: string, decision: "approved" | "rejected") {
