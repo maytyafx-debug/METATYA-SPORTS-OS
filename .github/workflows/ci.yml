@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - main
+      - feat/volleyball-operational-module-v1
   pull_request:
     branches:
       - main
-      - fix/tenant-security-role-alignment
 
 permissions:
   contents: read
