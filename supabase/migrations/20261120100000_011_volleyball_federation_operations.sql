@@ -404,7 +404,7 @@ begin
     when 'sports_fee_payments' then 'payment_status'
     when 'sports_member_insurance' then 'insurance_status'
     else null end;
-  if v_field is not null and v_old->>v_field is distinct from v_new->>v_field
+  if v_field is not null and (v_old->>v_field) is distinct from (v_new->>v_field)
      and not private.has_active_tenant_role(new.tenant_id,array['owner','admin']::text[]) then
     raise exception 'sensitive status transition requires owner or admin approval' using errcode='42501';
   end if;
