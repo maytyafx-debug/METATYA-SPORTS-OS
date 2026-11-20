@@ -54,3 +54,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/migration-replay-security-assertions.sql
       - name: Verify volleyball RLS, scoring RPCs and immutable result audit
         run: psql -v ON_ERROR_STOP=1 -f tests/volleyball-db-integration.sql
+      - name: Verify federation operations RLS, grants and audit immutability
+        run: psql -v ON_ERROR_STOP=1 -f tests/federation-operations-db-assertions.sql
