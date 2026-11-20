@@ -213,8 +213,7 @@ create table if not exists public.sports_facilities (
   unique (id,tenant_id)
 );
 
-do $
-begin
+do $ops$1begin
   if not exists (select 1 from pg_constraint where conname='sports_training_sessions_facility_tenant_fk') then
     alter table public.sports_training_sessions
       add constraint sports_training_sessions_facility_tenant_fk
@@ -347,8 +346,7 @@ create index if not exists sports_member_development_plans_member_idx on public.
 -- A talent assessment requires an explicitly granted, in-date consent linked to the same athlete.
 create or replace function public.sports_validate_talent_assessment_consent()
 returns trigger language plpgsql security definer set search_path=pg_catalog,public
-as $
-begin
+as $ops$1begin
   if new.assessment_type='talent' and not exists (
     select 1 from public.sports_member_guardian_consents c
     where c.id=new.guardian_consent_id and c.tenant_id=new.tenant_id
@@ -370,8 +368,7 @@ for each row execute function public.sports_validate_talent_assessment_consent()
 -- If a development plan references consent, it must be granted, current and belong to that athlete.
 create or replace function public.sports_validate_development_plan_consent()
 returns trigger language plpgsql security definer set search_path=pg_catalog,public
-as $
-begin
+as $ops$1begin
   if new.guardian_consent_id is not null and not exists (
     select 1 from public.sports_member_guardian_consents c
     where c.id=new.guardian_consent_id and c.tenant_id=new.tenant_id
@@ -393,8 +390,7 @@ for each row execute function public.sports_validate_development_plan_consent();
 -- Sensitive state transitions require owner/admin approval even for direct Data API calls.
 create or replace function public.sports_enforce_sensitive_transitions()
 returns trigger language plpgsql security definer set search_path=pg_catalog,private
-as $
-declare v_old jsonb:=to_jsonb(old); v_new jsonb:=to_jsonb(new); v_field text;
+as $ops$1declare v_old jsonb:=to_jsonb(old); v_new jsonb:=to_jsonb(new); v_field text;
 begin
   v_field:=case tg_table_name
     when 'sports_member_memberships' then 'status'
@@ -439,8 +435,7 @@ create unique index if not exists sports_member_memberships_one_active_uq
 -- Prevent two approved bookings from occupying the same facility at overlapping times.
 create or replace function public.sports_validate_facility_booking_overlap()
 returns trigger language plpgsql security definer set search_path=pg_catalog,public
-as $
-begin
+as $ops$1begin
   if new.booking_status='approved' then
     perform pg_advisory_xact_lock(hashtextextended(new.facility_id::text,0));
     if exists (
