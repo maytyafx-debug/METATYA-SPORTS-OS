@@ -112,12 +112,20 @@ const RESOURCES:ResourceSpec[] = [
 ];
 
 function labelOf(row:RecordRow) {
-  return String(row.name ?? row.title ?? row.invoice_number ?? row.membership_number ?? row.id ?? "رکورد");
+  return String(row.full_name ?? row.name ?? row.title ?? row.invoice_number ?? row.membership_number ?? row.staff_role ?? row.id ?? "رکورد");
 }
+
+const LOOKUP_RESOURCE:Record<string,string> = {
+  member_id:"members",parent_id:"org-units",org_unit_id:"org-units",
+  staff_profile_id:"staff",coach_profile_id:"staff",assessor_profile_id:"staff",assigned_coach_profile_id:"staff",
+  program_id:"training-programs",session_id:"training-sessions",facility_id:"facilities",
+  membership_id:"memberships",assessment_id:"assessments",guardian_consent_id:"guardian-consents",invoice_id:"invoices"
+};
 
 export default function VolleyballOperationsPage() {
  const [resourceKey,setResourceKey]=useState("org-units");
  const [items,setItems]=useState<RecordRow[]>([]);
+ const [lookups,setLookups]=useState<Record<string,RecordRow[]>>({});
  const [values,setValues]=useState<Record<string,string>>({});
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState("");
