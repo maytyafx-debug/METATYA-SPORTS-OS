@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test:security": "node --experimental-strip-types --test tests/tenant-permissions.test.ts",
     "test:volleyball": "node --experimental-strip-types --test tests/volleyball-scoring.test.ts",
-    "test": "npm run test:security && npm run test:volleyball"
+    "test:operations": "node --experimental-strip-types --test tests/sports-operations.test.ts",
+    "test": "npm run test:security && npm run test:volleyball && npm run test:operations"
   },
   "engines": {
     "node": ">=22.6.0"
