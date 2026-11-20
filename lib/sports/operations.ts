@@ -25,7 +25,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
     table:"sports_member_memberships",select:"id,member_id,org_unit_id,membership_number,membership_type,status,valid_from,valid_until,fee_status,approved_by,approved_at,notes,created_at",
     createFields:["member_id","org_unit_id","membership_number","membership_type","status","valid_from","valid_until","fee_status","notes"],
     updateFields:["org_unit_id","membership_type","status","valid_from","valid_until","fee_status","notes"],
-    readRoles:managers,writeRoles:managers,required:["member_id","membership_type"],actorField:"approved_by",updatedAt:true
+    readRoles:managers,writeRoles:managers,required:["member_id","membership_type"],updatedAt:true
   },
   staff: {
     table:"sports_staff_profiles",select:"id,member_id,staff_role,license_number,grade,status,started_on,ended_on,created_at",
@@ -37,13 +37,13 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
     table:"sports_staff_credentials",select:"id,staff_profile_id,credential_type,title,issuer,credential_number,issued_on,expires_on,verification_status,verified_by,verified_at,created_at",
     createFields:["staff_profile_id","credential_type","title","issuer","credential_number","issued_on","expires_on"],
     updateFields:["credential_type","title","issuer","credential_number","issued_on","expires_on","verification_status"],
-    readRoles:managers,writeRoles:managers,required:["staff_profile_id","credential_type","title"],actorField:"verified_by"
+    readRoles:managers,writeRoles:managers,required:["staff_profile_id","credential_type","title"]
   },
   "guardian-consents": {
     table:"sports_member_guardian_consents",select:"id,member_id,guardian_user_id,consent_scope,status,valid_from,valid_until,captured_at,revoked_at,notes",
     createFields:["member_id","guardian_user_id","consent_scope","status","valid_from","valid_until","notes"],
     updateFields:["status","valid_until","notes"],
-    readRoles:privateManagers,writeRoles:privateManagers,required:["member_id","guardian_user_id","consent_scope"],actorField:"captured_by"
+    readRoles:privateManagers,writeRoles:privateManagers,required:["member_id","guardian_user_id","consent_scope"],actorField:"captured_by",orderBy:"captured_at"
   },
   "training-programs": {
     table:"sports_training_programs",select:"id,title,sport_type,age_group,target_group,coach_profile_id,start_date,end_date,status,description,created_at",
@@ -60,7 +60,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
   attendance: {
     table:"sports_training_attendance",select:"id,session_id,member_id,attendance_status,recorded_by,notes,recorded_at",
     createFields:["session_id","member_id","attendance_status","notes"],updateFields:["attendance_status","notes"],
-    readRoles:coaches,writeRoles:coaches,required:["session_id","member_id","attendance_status"],actorField:"recorded_by"
+    readRoles:coaches,writeRoles:coaches,required:["session_id","member_id","attendance_status"],actorField:"recorded_by",orderBy:"recorded_at"
   },
   assessments: {
     table:"sports_member_assessments",select:"id,member_id,sport_type,assessment_type,assessed_on,assessor_profile_id,score,indicators,strengths,development_areas,recommendation,review_status,created_at",
@@ -83,7 +83,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
   bookings: {
     table:"sports_facility_bookings",select:"id,facility_id,purpose,starts_at,ends_at,booking_status,requested_by,decided_by,decision_note,created_at",
     createFields:["facility_id","purpose","starts_at","ends_at"],updateFields:["booking_status","decision_note"],
-    readRoles:managers,writeRoles:managers,required:["facility_id","purpose","starts_at","ends_at"],actorField:"decided_by",orderBy:"starts_at"
+    readRoles:managers,writeRoles:managers,required:["facility_id","purpose","starts_at","ends_at"],actorField:"requested_by",orderBy:"starts_at"
   },
   invoices: {
     table:"sports_fee_invoices",select:"id,member_id,membership_id,invoice_number,description,amount_minor,currency,due_date,invoice_status,issued_by,created_at",
@@ -99,7 +99,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
     table:"sports_member_insurance",select:"id,member_id,provider,policy_number,coverage_type,valid_from,valid_until,insurance_status,verified_by,verified_at,created_at",
     createFields:["member_id","provider","policy_number","coverage_type","valid_from","valid_until","insurance_status"],
     updateFields:["provider","policy_number","coverage_type","valid_from","valid_until","insurance_status"],
-    readRoles:privateManagers,writeRoles:privateManagers,required:["member_id","coverage_type"],actorField:"verified_by",updatedAt:true
+    readRoles:privateManagers,writeRoles:privateManagers,required:["member_id","coverage_type"],updatedAt:true
   },
   announcements: {
     table:"sports_announcements",select:"id,title,body,audience,publish_at,expires_at,status,created_by,created_at",
