@@ -41,8 +41,8 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
   },
   "guardian-consents": {
     table:"sports_member_guardian_consents",select:"id,member_id,guardian_user_id,consent_scope,status,valid_from,valid_until,captured_at,revoked_at,notes",
-    createFields:["member_id","guardian_user_id","consent_scope","status","valid_from","valid_until","notes"],
-    updateFields:["status","valid_until","notes"],
+    createFields:["member_id","guardian_user_id","consent_scope","valid_from","valid_until","notes"],
+    updateFields:["valid_until","notes"],
     readRoles:privateManagers,writeRoles:privateManagers,required:["member_id","guardian_user_id","consent_scope"],actorField:"captured_by",orderBy:"captured_at"
   },
   "training-programs": {
