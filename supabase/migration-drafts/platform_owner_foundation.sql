@@ -389,6 +389,54 @@ begin
 end;
 $$;
 
+create or replace function public.platform_audit_list(
+  p_limit integer default 50,
+  p_before_id bigint default null
+)
+returns table (
+  event_id bigint,
+  actor_id uuid,
+  action text,
+  target_type text,
+  target_id uuid,
+  tenant_id uuid,
+  reason text,
+  metadata jsonb,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare v_limit integer;
+begin
+  if auth.uid() is null or not private.is_platform_owner() then
+    raise exception 'platform owner required' using errcode = '42501';
+  end if;
+  if p_before_id is not null and p_before_id < 1 then
+    raise exception 'invalid audit cursor' using errcode = '22023';
+  end if;
+  v_limit := least(greatest(coalesce(p_limit,50),1),100);
+
+  insert into private.platform_audit_events
+    (actor_id,action,target_type,reason,metadata)
+  values
+    (auth.uid(),'platform.audit.read','platform_audit_events',
+     'Platform Owner viewed audit event page',
+     jsonb_build_object('limit',v_limit,'before_id',p_before_id));
+
+  return query
+  select e.id,e.actor_id,e.action,e.target_type,e.target_id,e.tenant_id,
+         e.reason,e.metadata,e.created_at
+  from private.platform_audit_events e
+  where p_before_id is null or e.id < p_before_id
+  order by e.id desc
+  limit v_limit;
+end;
+$;
+revoke all on function public.platform_audit_list(integer,bigint) from public, anon;
+grant execute on function public.platform_audit_list(integer,bigint) to authenticated;
+
 -- No broad Storage policy is added here. The only live bucket observed is
 -- "paid-packs", which has no object policies and is not tenant-scoped.
 -- Add Platform Owner Storage access only with a server-mediated, audited
