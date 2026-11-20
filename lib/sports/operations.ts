@@ -63,7 +63,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
     readRoles:coaches,writeRoles:coaches,required:["session_id","member_id","attendance_status"],actorField:"recorded_by",orderBy:"recorded_at"
   },
   assessments: {
-    table:"sports_member_assessments",select:"id,member_id,sport_type,assessment_type,assessed_on,assessor_profile_id,score,indicators,strengths,development_areas,recommendation,review_status,created_at",
+    table:"sports_member_assessments",select:"id,member_id,sport_type,assessment_type,assessed_on,assessor_profile_id,guardian_consent_id,score,indicators,strengths,development_areas,recommendation,review_status,created_at",
     createFields:["member_id","sport_type","assessment_type","assessed_on","assessor_profile_id","guardian_consent_id","score","indicators","strengths","development_areas","recommendation"],
     updateFields:["score","indicators","strengths","development_areas","recommendation","review_status"],
     readRoles:coaches,writeRoles:coaches,required:["member_id","sport_type","assessment_type"],actorField:"created_by"
