@@ -61,7 +61,7 @@ const RESOURCES:ResourceSpec[] = [
  {key:"assessments",title:"ارزیابی و استعدادیابی",group:"حفاظت ورزشکار",description:"ارزیابی اولیه و دوره‌ای با ثبت شاخص‌ها و تأیید کارشناس مجاز",fields:[
   {key:"member_id",label:"شناسه ورزشکار",required:true},{key:"sport_type",label:"رشته",required:true},
   {key:"assessment_type",label:"نوع ارزیابی",kind:"select",options:["initial","technical","physical","performance","talent","periodic","other"],required:true},
-  {key:"assessed_on",label:"تاریخ ارزیابی",kind:"date"},{key:"assessor_profile_id",label:"شناسه ارزیاب"},
+  {key:"assessed_on",label:"تاریخ ارزیابی",kind:"date"},{key:"assessor_profile_id",label:"شناسه ارزیاب"},{key:"guardian_consent_id",label:"شناسه رضایت معتبر سرپرست (برای استعدادیابی الزامی است)"},
   {key:"score",label:"امتیاز",kind:"number"},{key:"indicators",label:"شاخص‌ها (JSON)",kind:"json"},
   {key:"strengths",label:"نقاط قوت",kind:"long"},{key:"development_areas",label:"زمینه‌های قابل توسعه",kind:"long"},
   {key:"recommendation",label:"پیشنهاد تخصصی",kind:"long"}
