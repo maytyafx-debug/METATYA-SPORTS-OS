@@ -31,6 +31,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const parsed=sanitizeOperationsPayload(body,config.createFields,config.required);
   if(!parsed.ok) return NextResponse.json({error:parsed.error},{status:400});
 
+  if(resource==="assessments" && parsed.value.assessment_type==="talent" && !parsed.value.guardian_consent_id) {
+    return NextResponse.json({error:"برای ارزیابی استعدادیابی، رضایت معتبر سرپرست باید ثبت و تأیید شده باشد."},{status:400});
+  }
   const record:Record<string,unknown>={...parsed.value,tenant_id:tenant.tenantId};
   if(config.actorField) record[config.actorField]=tenant.user.id;
   const {data,error}=await tenant.supabase.from(config.table)
@@ -56,6 +59,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   const patch={...source};delete patch.id;
   const parsed=sanitizeOperationsPayload(patch,config.updateFields);
   if(!parsed.ok) return NextResponse.json({error:parsed.error},{status:400});
+  const approvalFields:Record<string,string[]> = {
+    memberships:["status"],credentials:["verification_status"],bookings:["booking_status"],
+    payments:["payment_status"],insurance:["insurance_status"]
+  };
+  if((approvalFields[resource]??[]).some(field=>field in parsed.value) && !["owner","admin"].includes(tenant.role)) {
+    return NextResponse.json({error:"تأیید یا تغییر وضعیت نهایی فقط برای مالک و مدیر مجاز است."},{status:403});
+  }
   if(Object.keys(parsed.value).length===0) return NextResponse.json({error:"هیچ فیلدی برای ویرایش ارسال نشده است."},{status:400});
   const update:Record<string,unknown>={...parsed.value};
   if(config.updatedAt) update.updated_at=new Date().toISOString();
