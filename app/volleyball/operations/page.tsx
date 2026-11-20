@@ -147,7 +147,8 @@ export default function VolleyballOperationsPage() {
     if(raw==="")continue;
     if(field.kind==="number")payload[field.key]=Number(raw);
     else if(field.kind==="json")payload[field.key]=JSON.parse(raw);
-    else if(field.kind==="datetime")payload[field.key]=new Date(raw).toISOString();\n    else payload[field.key]=raw;
+    else if(field.kind==="datetime")payload[field.key]=new Date(raw).toISOString();
+    else payload[field.key]=raw;
    }
    const response=await fetch("/api/sports/operations/"+selected.key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
    const result=await response.json() as {error?:string};
