@@ -3,6 +3,7 @@ import {FormEvent,useCallback,useEffect,useState} from "react";
 import {useRouter} from "next/navigation";
 import Link from "next/link";
 import {createSupabaseBrowserClient} from "@/lib/supabase/client";
+import {canCreateEvent,canCreateMember,canCreateResult,canReadEvents,canReadMembers,canReadResults} from "@/lib/tenancy/permissions";
 
 type Membership={tenant_id:string;role:string;sports_tenants:{id:string;name:string;slug:string;status:string}|null};
 type Member={id:string;full_name:string;sport_type:string|null;membership_number:string|null;category:string|null;status:string};
@@ -79,12 +80,19 @@ export default function DashboardPage(){
 
  useEffect(()=>{
   if(!tenantId)return;
+  const membership=memberships.find(item=>item.tenant_id===tenantId);
+  if(!membership||!canReadMembers(membership.role)||!canReadEvents(membership.role)||!canReadResults(membership.role)){
+   setMembers([]);setEvents([]);setResults([]);
+   setMessage(membership?"نقش فعلی شما در این پایلوت اجازه مشاهده داده‌های عملیاتی را ندارد.":"");
+   return;
+  }
+  setMessage("");
   let active=true;
   void loadData().catch(err=>{
    if(active)setMessage(err instanceof Error?err.message:"خطای دریافت اطلاعات");
   });
   return()=>{active=false;};
- },[tenantId,loadData]);
+ },[tenantId,memberships,loadData]);
 
  async function post(path:string,body:unknown){
   return apiFetch(path,{method:"POST",body:JSON.stringify(body)});
@@ -127,6 +135,11 @@ export default function DashboardPage(){
 
  if(!ready)return <main className="shell"><p>در حال بارگذاری پنل...</p></main>;
  const selected=memberships.find(m=>m.tenant_id===tenantId);
+ const selectedRole=selected?.role??"";
+ const canReadOperationalData=canReadMembers(selectedRole)&&canReadEvents(selectedRole)&&canReadResults(selectedRole);
+ const canManageMembers=canCreateMember(selectedRole);
+ const canManageEvents=canCreateEvent(selectedRole);
+ const canRecordResults=canCreateResult(selectedRole);
  const memberNameById=(id:string)=>members.find(m=>m.id===id)?.full_name??"عضو";
  const eventTitleById=(id:string)=>events.find(v=>v.id===id)?.title??"رویداد";
 
@@ -145,13 +158,13 @@ export default function DashboardPage(){
     </select>
    </section>}
    {selected&&<p className="muted">سازمان: {selected.sports_tenants?.name??"سازمان انتخاب‌شده"} | نقش: {selected.role}</p>}
-   {tenantId&&<>
+   {tenantId&&(canReadOperationalData ? <>
     <section className="stats">
      <div className="stat"><span className="muted">اعضا</span><strong>{members.length}</strong></div>
      <div className="stat"><span className="muted">رویدادها</span><strong>{events.length}</strong></div>
      <div className="stat"><span className="muted">نتایج</span><strong>{results.length}</strong></div>
     </section>
-    <section className="panel"><h2 className="section-title">ثبت عضو جدید</h2>
+    {canManageMembers&&<section className="panel"><h2 className="section-title">ثبت عضو جدید</h2>
      <form className="form-grid" onSubmit={submitMember}>
       <div className="field"><label htmlFor="member-name">نام عضو</label><input id="member-name" required maxLength={150} minLength={2} value={memberName} onChange={e=>setMemberName(e.target.value)}/></div>
       <div className="field"><label htmlFor="sport-type">رشته ورزشی</label><input id="sport-type" maxLength={100} value={sportType} onChange={e=>setSportType(e.target.value)}/></div>
@@ -159,15 +172,15 @@ export default function DashboardPage(){
       <div className="field"><label htmlFor="member-category">رده</label><input id="member-category" maxLength={100} value={category} onChange={e=>setCategory(e.target.value)}/></div>
       <div className="field full"><button className="btn" disabled={busy}>ثبت عضو</button></div>
      </form>
-    </section>
-    <section className="panel"><h2 className="section-title">ثبت رویداد</h2>
+    </section>}
+    {canManageEvents&&<section className="panel"><h2 className="section-title">ثبت رویداد</h2>
      <form className="form-grid" onSubmit={submitEvent}>
       <div className="field"><label htmlFor="event-title">عنوان رویداد</label><input id="event-title" required minLength={2} maxLength={200} value={eventTitle} onChange={e=>setEventTitle(e.target.value)}/></div>
       <div className="field"><label htmlFor="event-date">تاریخ و ساعت</label><input id="event-date" type="datetime-local" required value={eventDate} onChange={e=>setEventDate(e.target.value)}/></div>
       <div className="field full"><button className="btn" disabled={busy}>ثبت رویداد</button></div>
      </form>
-    </section>
-    <section className="panel"><h2 className="section-title">ثبت نتیجه رویداد</h2>
+    </section>}
+    {canRecordResults&&<section className="panel"><h2 className="section-title">ثبت نتیجه رویداد</h2>
      {members.length===0||events.length===0?<p className="muted">برای ثبت نتیجه، ابتدا حداقل یک عضو و یک رویداد ثبت کنید.</p>:
       <form className="form-grid" onSubmit={submitResult}>
        <div className="field"><label htmlFor="result-member">عضو</label><select id="result-member" required value={resultMember} onChange={e=>setResultMember(e.target.value)}><option value="">انتخاب عضو</option>{members.map(m=><option key={m.id} value={m.id}>{m.full_name}</option>)}</select></div>
@@ -177,7 +190,7 @@ export default function DashboardPage(){
        <div className="field full"><label htmlFor="result-notes">توضیحات</label><input id="result-notes" maxLength={2000} value={resultNotes} onChange={e=>setResultNotes(e.target.value)}/></div>
        <div className="field full"><button className="btn" disabled={busy}>ثبت نتیجه</button></div>
       </form>}
-    </section>
+    </section>}
     <section className="panel"><h2 className="section-title">فهرست اعضا</h2>
      {members.length===0?<p className="muted">عضوی ثبت نشده است.</p>:<ul className="list">{members.map(m=><li key={m.id}>{m.full_name}<span className="muted"> — {m.sport_type??"رشته ثبت نشده"}</span></li>)}</ul>}
     </section>
@@ -187,7 +200,7 @@ export default function DashboardPage(){
     <section className="panel"><h2 className="section-title">نتایج ثبت‌شده</h2>
      {results.length===0?<p className="muted">نتیجه‌ای ثبت نشده است.</p>:<ul className="list">{results.map(r=><li key={r.id}>{memberNameById(r.member_id)} — {eventTitleById(r.event_id)}{r.score!==null? " | امتیاز: "+r.score:""}{r.rank!==null? " | رتبه: "+r.rank:""}{r.notes? " | "+r.notes:""}</li>)}</ul>}
     </section>
-   </>}
+   </> : <section className="panel"><p className="muted">نقش فعلی شما در نسخه متصل‌شده اجازه مشاهده داده‌های عملیاتی را ندارد. برای دسترسی، از مدیر سازمان بخواهید نقش مجاز را از مسیر رسمی تعیین کند.</p></section>)}
    {message&&<p className="status" role="status" aria-live="polite">{message}</p>}
   </main>
  </>;
