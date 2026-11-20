@@ -407,7 +407,7 @@ returns table (
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare v_limit integer;
 begin
   if auth.uid() is null or not private.is_platform_owner() then
@@ -433,7 +433,7 @@ begin
   order by e.id desc
   limit v_limit;
 end;
-$;
+$$;
 revoke all on function public.platform_audit_list(integer,bigint) from public, anon;
 grant execute on function public.platform_audit_list(integer,bigint) to authenticated;
 
