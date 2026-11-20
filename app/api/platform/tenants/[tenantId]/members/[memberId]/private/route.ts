@@ -14,7 +14,7 @@ export async function GET(
  const{tenantId,memberId}=await context.params;
  if(!UUID.test(tenantId)||!UUID.test(memberId))
   return NextResponse.json({error:"شناسه سازمان یا عضو معتبر نیست."},{status:400});
- const reason=request.nextUrl.searchParams.get("reason")?.trim()??"";
+ const reason=request.headers.get("x-audit-reason")?.trim()??"";
  if(reason.length<5||reason.length>500)
   return NextResponse.json({error:"برای مشاهده اطلاعات خصوصی، دلیل دسترسی معتبر الزامی است."},{status:400});
 
