@@ -220,7 +220,7 @@ begin
       add constraint sports_training_sessions_facility_tenant_fk
       foreign key (facility_id,tenant_id) references public.sports_facilities(id,tenant_id) on delete restrict;
   end if;
-end $;
+end $ops$;
 
 create table if not exists public.sports_facility_bookings (
   id uuid primary key default gen_random_uuid(),
