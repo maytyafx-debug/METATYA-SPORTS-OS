@@ -390,6 +390,47 @@ create trigger sports_development_plan_consent_check
 before insert or update on public.sports_member_development_plans
 for each row execute function public.sports_validate_development_plan_consent();
 
+-- Sensitive state transitions require owner/admin approval even for direct Data API calls.
+create or replace function public.sports_enforce_sensitive_transitions()
+returns trigger language plpgsql security definer set search_path=pg_catalog,private
+as $
+declare v_old jsonb:=to_jsonb(old); v_new jsonb:=to_jsonb(new); v_field text;
+begin
+  v_field:=case tg_table_name
+    when 'sports_member_memberships' then 'status'
+    when 'sports_staff_credentials' then 'verification_status'
+    when 'sports_member_guardian_consents' then 'status'
+    when 'sports_facility_bookings' then 'booking_status'
+    when 'sports_fee_payments' then 'payment_status'
+    when 'sports_member_insurance' then 'insurance_status'
+    else null end;
+  if v_field is not null and v_old->>v_field is distinct from v_new->>v_field
+     and not private.has_active_tenant_role(new.tenant_id,array['owner','admin']::text[]) then
+    raise exception 'sensitive status transition requires owner or admin approval' using errcode='42501';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.sports_enforce_sensitive_transitions() from public,anon,authenticated;
+create trigger sports_membership_status_approval
+before update on public.sports_member_memberships
+for each row execute function public.sports_enforce_sensitive_transitions();
+create trigger sports_staff_credential_approval
+before update on public.sports_staff_credentials
+for each row execute function public.sports_enforce_sensitive_transitions();
+create trigger sports_guardian_consent_approval
+before update on public.sports_member_guardian_consents
+for each row execute function public.sports_enforce_sensitive_transitions();
+create trigger sports_facility_booking_approval
+before update on public.sports_facility_bookings
+for each row execute function public.sports_enforce_sensitive_transitions();
+create trigger sports_fee_payment_approval
+before update on public.sports_fee_payments
+for each row execute function public.sports_enforce_sensitive_transitions();
+create trigger sports_insurance_approval
+before update on public.sports_member_insurance
+for each row execute function public.sports_enforce_sensitive_transitions();
+
 -- Only one active membership of a given type per athlete and tenant.
 create unique index if not exists sports_member_memberships_one_active_uq
   on public.sports_member_memberships(tenant_id,member_id,membership_type)
@@ -458,6 +499,9 @@ begin
     if t in ('sports_training_programs','sports_training_sessions','sports_training_attendance',
              'sports_member_assessments','sports_member_development_plans') then
       roles := array['owner','admin','staff','coach']::text[];
+    end if;
+    if t in ('sports_member_guardian_consents','sports_fee_invoices','sports_fee_payments','sports_member_insurance') then
+      roles := array['owner','admin']::text[];
     end if;
     execute format('create policy %I on public.%I for select to authenticated using ((select private.has_active_tenant_role(tenant_id,%L::text[])))',
       t||'_tenant_select',t,roles);
