@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   interpretPlatformOwnerCheck,
   parsePlatformPagination,
-} from "../lib/platform/owner-auth.ts";
+} from "../lib/platform/owner-auth-utils.ts";
 
 test("only an authoritative boolean true grants Platform Owner status",()=>{
   assert.deepEqual(interpretPlatformOwnerCheck(true,null),{
