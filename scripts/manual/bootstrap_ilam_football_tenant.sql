@@ -1,7 +1,7 @@
 -- Manual onboarding script for the Football Federation of Ilam.
--- Run only after the designated administrator has been created/invited in
--- Supabase Authentication > Users and has a confirmed auth.users UUID.
--- Replace the UUID below. This script is intentionally NOT auto-applied.
+-- The designated administrator must first be created/invited in
+-- Supabase Authentication with this exact, verified email address.
+-- This script does not create Auth users or mailboxes.
 --
 -- Project: megbqtoihsuouiaxpifl
 -- Tenant slug: ilam-football
@@ -12,15 +12,20 @@ begin;
 
 do $$
 declare
-  v_admin_user_id uuid := '00000000-0000-0000-0000-000000000000'::uuid;
+  v_admin_email text := 'admin@football.com';
+  v_admin_user_id uuid;
   v_tenant_id uuid;
 begin
-  if v_admin_user_id = '00000000-0000-0000-0000-000000000000'::uuid then
-    raise exception 'Replace the administrator UUID before running this script.';
-  end if;
+  select id
+    into v_admin_user_id
+  from auth.users
+  where lower(email) = lower(v_admin_email)
+    and email_confirmed_at is not null;
 
-  if not exists (select 1 from auth.users where id = v_admin_user_id) then
-    raise exception 'The administrator UUID does not exist in auth.users. Invite/create the user first.';
+  if v_admin_user_id is null then
+    raise exception
+      'A confirmed Supabase Auth user with email % must exist before running this script.',
+      v_admin_email;
   end if;
 
   select id into v_tenant_id
@@ -44,7 +49,7 @@ begin
   on conflict (tenant_id, user_id)
   do update set role = 'admin', status = 'active';
 
-  raise notice 'Football tenant ready: % (admin user: %)', v_tenant_id, v_admin_user_id;
+  raise notice 'Football tenant ready: % (admin email: %)', v_tenant_id, v_admin_email;
 end;
 $$;
 
