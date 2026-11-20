@@ -2,7 +2,7 @@ name: Migration replay and security integration
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feat/**"]
   pull_request:
     branches: [main]
 
