@@ -37,7 +37,7 @@ create table if not exists public.sports_member_memberships (
   updated_at timestamptz not null default now(),
   unique (id,tenant_id),
   foreign key (member_id,tenant_id) references public.sports_members(id,tenant_id) on delete restrict,
-  foreign key (org_unit_id,tenant_id) references public.sports_org_units(id,tenant_id) on delete set null
+  foreign key (org_unit_id,tenant_id) references public.sports_org_units(id,tenant_id) on delete restrict
 );
 create unique index if not exists sports_member_memberships_number_uq
   on public.sports_member_memberships(tenant_id,membership_number)
@@ -117,7 +117,7 @@ create table if not exists public.sports_training_programs (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (id,tenant_id),
-  foreign key (coach_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete set null,
+  foreign key (coach_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete restrict,
   check (end_date is null or start_date is null or end_date >= start_date)
 );
 
@@ -192,9 +192,9 @@ create table if not exists public.sports_member_development_plans (
   updated_at timestamptz not null default now(),
   unique (id,tenant_id),
   foreign key (member_id,tenant_id) references public.sports_members(id,tenant_id) on delete restrict,
-  foreign key (assessment_id,tenant_id) references public.sports_member_assessments(id,tenant_id) on delete set null,
-  foreign key (assigned_coach_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete set null,
-  foreign key (guardian_consent_id,tenant_id) references public.sports_member_guardian_consents(id,tenant_id) on delete set null
+  foreign key (assessment_id,tenant_id) references public.sports_member_assessments(id,tenant_id) on delete restrict,
+  foreign key (assigned_coach_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete restrict,
+  foreign key (guardian_consent_id,tenant_id) references public.sports_member_guardian_consents(id,tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_facilities (
@@ -246,7 +246,7 @@ create table if not exists public.sports_fee_invoices (
   unique (id,tenant_id),
   unique (tenant_id,invoice_number),
   foreign key (member_id,tenant_id) references public.sports_members(id,tenant_id) on delete restrict,
-  foreign key (membership_id,tenant_id) references public.sports_member_memberships(id,tenant_id) on delete set null
+  foreign key (membership_id,tenant_id) references public.sports_member_memberships(id,tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_fee_payments (
@@ -395,7 +395,14 @@ grant select,insert,update,delete on
   public.sports_fee_invoices,public.sports_fee_payments,public.sports_member_insurance,
   public.sports_tenant_settings,public.sports_announcements to authenticated;
 grant select on public.sports_platform_audit_events to authenticated;
-revoke all on all tables in schema public from anon;
+revoke all on table
+  public.sports_org_units,public.sports_member_memberships,public.sports_staff_profiles,
+  public.sports_staff_credentials,public.sports_member_guardian_consents,public.sports_training_programs,
+  public.sports_training_sessions,public.sports_training_attendance,public.sports_member_assessments,
+  public.sports_member_development_plans,public.sports_facilities,public.sports_facility_bookings,
+  public.sports_fee_invoices,public.sports_fee_payments,public.sports_member_insurance,
+  public.sports_tenant_settings,public.sports_announcements,public.sports_platform_audit_events
+from public,anon;
 revoke insert,update,delete on public.sports_platform_audit_events from public,anon,authenticated;
 grant usage,select on sequence public.sports_platform_audit_events_id_seq to authenticated;
 
