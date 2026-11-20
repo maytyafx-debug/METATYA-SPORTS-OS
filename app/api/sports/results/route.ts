@@ -1,12 +1,13 @@
 import {NextRequest,NextResponse} from "next/server";
 import {resolveTenant} from "@/lib/tenancy/resolve-tenant";
-import {canCreateResult} from "@/lib/tenancy/permissions";
+import { canCreateResult, canReadResults } from "@/lib/tenancy/permissions";
 
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function GET(req:NextRequest){
  const c=await resolveTenant(req);
  if(!c.ok)return NextResponse.json({error:c.error},{status:c.status});
+ if(!canReadResults(c.role))return NextResponse.json({error:"اجازه مشاهده اطلاعات عملیاتی را ندارید."},{status:403});
  const{data,error}=await c.supabase.from("sports_results")
   .select("id,member_id,event_id,score,rank,notes,created_at")
   .eq("tenant_id",c.tenantId).order("created_at",{ascending:false});
