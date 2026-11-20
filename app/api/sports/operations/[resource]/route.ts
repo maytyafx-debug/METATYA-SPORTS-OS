@@ -59,12 +59,27 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if(Object.keys(parsed.value).length===0) return NextResponse.json({error:"هیچ فیلدی برای ویرایش ارسال نشده است."},{status:400});
   const update:Record<string,unknown>={...parsed.value};
   if(config.updatedAt) update.updated_at=new Date().toISOString();
-  if(config.actorField && ["memberships","credentials","bookings","payments","insurance"].includes(resource)) {
-    update[config.actorField]=tenant.user.id;
-    if(resource==="memberships" && update.status==="active") update.approved_at=new Date().toISOString();
-    if(resource==="credentials" && update.verification_status==="verified") update.verified_at=new Date().toISOString();
-    if(resource==="insurance" && update.insurance_status==="active") update.verified_at=new Date().toISOString();
+  const now=new Date().toISOString();
+  if(resource==="memberships" && update.status==="active") {
+    update.approved_by=tenant.user.id;
+    update.approved_at=now;
   }
+  if(resource==="credentials" && ["verified","rejected"].includes(String(update.verification_status))) {
+    update.verified_by=tenant.user.id;
+    if(update.verification_status==="verified") update.verified_at=now;
+  }
+  if(resource==="bookings" && ["approved","rejected"].includes(String(update.booking_status))) {
+    update.decided_by=tenant.user.id;
+  }
+  if(resource==="payments" && ["confirmed","rejected","refunded"].includes(String(update.payment_status))) {
+    update.confirmed_by=tenant.user.id;
+    if(update.payment_status==="confirmed") update.received_at=now;
+  }
+  if(resource==="insurance" && ["active","rejected"].includes(String(update.insurance_status))) {
+    update.verified_by=tenant.user.id;
+    if(update.insurance_status==="active") update.verified_at=now;
+  }
+  if(resource==="guardian-consents" && update.status==="revoked") update.revoked_at=now;
   const {data,error}=await tenant.supabase.from(config.table).update(update)
     .eq("id",id).eq("tenant_id",tenant.tenantId).select(config.select).maybeSingle();
   if(error) return NextResponse.json({error:"ویرایش اطلاعات ناموفق بود."},{status:400});
