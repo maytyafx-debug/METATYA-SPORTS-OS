@@ -135,7 +135,7 @@ create table if not exists public.sports_training_sessions (
   created_at timestamptz not null default now(),
   unique (id,tenant_id),
   foreign key (program_id,tenant_id) references public.sports_training_programs(id,tenant_id) on delete cascade,
-  foreign key (coach_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete set null,
+  foreign key (coach_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete restrict,
   check (ends_at is null or ends_at > starts_at)
 );
 
@@ -171,7 +171,7 @@ create table if not exists public.sports_member_assessments (
   created_at timestamptz not null default now(),
   unique (id,tenant_id),
   foreign key (member_id,tenant_id) references public.sports_members(id,tenant_id) on delete restrict,
-  foreign key (assessor_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete set null
+  foreign key (assessor_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_member_development_plans (
@@ -210,6 +210,15 @@ create table if not exists public.sports_facilities (
   updated_at timestamptz not null default now(),
   unique (id,tenant_id)
 );
+
+do $
+begin
+  if not exists (select 1 from pg_constraint where conname='sports_training_sessions_facility_tenant_fk') then
+    alter table public.sports_training_sessions
+      add constraint sports_training_sessions_facility_tenant_fk
+      foreign key (facility_id,tenant_id) references public.sports_facilities(id,tenant_id) on delete restrict;
+  end if;
+end $;
 
 create table if not exists public.sports_facility_bookings (
   id uuid primary key default gen_random_uuid(),
@@ -404,7 +413,7 @@ revoke all on table
   public.sports_tenant_settings,public.sports_announcements,public.sports_platform_audit_events
 from public,anon;
 revoke insert,update,delete on public.sports_platform_audit_events from public,anon,authenticated;
-grant usage,select on sequence public.sports_platform_audit_events_id_seq to authenticated;
+revoke all on sequence public.sports_platform_audit_events_id_seq from public,anon;\ngrant usage,select on sequence public.sports_platform_audit_events_id_seq to authenticated;
 
 -- Append-only, metadata-only audit events: never copy private athlete/financial payloads.
 create or replace function public.sports_write_platform_audit_event()
