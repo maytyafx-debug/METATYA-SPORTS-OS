@@ -23,7 +23,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
   },
   memberships: {
     table:"sports_member_memberships",select:"id,member_id,org_unit_id,membership_number,membership_type,status,valid_from,valid_until,fee_status,approved_by,approved_at,notes,created_at",
-    createFields:["member_id","org_unit_id","membership_number","membership_type","status","valid_from","valid_until","fee_status","notes"],
+    createFields:["member_id","org_unit_id","membership_number","membership_type","valid_from","valid_until","fee_status","notes"],
     updateFields:["org_unit_id","membership_type","status","valid_from","valid_until","fee_status","notes"],
     readRoles:managers,writeRoles:managers,required:["member_id","membership_type"],updatedAt:true
   },
@@ -64,7 +64,7 @@ export const SPORTS_OPERATIONS: Record<string, OperationsResource> = {
   },
   assessments: {
     table:"sports_member_assessments",select:"id,member_id,sport_type,assessment_type,assessed_on,assessor_profile_id,score,indicators,strengths,development_areas,recommendation,review_status,created_at",
-    createFields:["member_id","sport_type","assessment_type","assessed_on","assessor_profile_id","score","indicators","strengths","development_areas","recommendation"],
+    createFields:["member_id","sport_type","assessment_type","assessed_on","assessor_profile_id","guardian_consent_id","score","indicators","strengths","development_areas","recommendation"],
     updateFields:["score","indicators","strengths","development_areas","recommendation","review_status"],
     readRoles:coaches,writeRoles:coaches,required:["member_id","sport_type","assessment_type"],actorField:"created_by"
   },
