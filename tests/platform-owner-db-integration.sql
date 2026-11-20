@@ -33,11 +33,11 @@ begin
     raise exception 'global owner was not recognized for tenant two';
   end if;
   select count(*) into n from public.sports_tenants;
-  if n<>2 then raise exception 'Platform Owner cannot inspect all tenants'; end if;
+  if n<>4 then raise exception 'Platform Owner cannot inspect all tenants'; end if;
   select count(*) into n from public.sports_members;
-  if n<>2 then raise exception 'Platform Owner cannot inspect all tenant members'; end if;
+  if n<>6 then raise exception 'Platform Owner cannot inspect all tenant members'; end if;
   select count(*) into n from public.sports_tenant_memberships;
-  if n<6 then raise exception 'Platform Owner cannot inspect global memberships'; end if;
+  if n<10 then raise exception 'Platform Owner cannot inspect global memberships'; end if;
   select count(*) into n from public.sports_member_private
   where member_id='10000000-0000-4000-8000-000000000031';
   if n<>0 then raise exception 'Platform Owner private data must use audited RPC'; end if;
@@ -108,7 +108,7 @@ begin
   if public.is_platform_owner() then raise exception 'tenant admin escalated to Platform Owner'; end if;
   select count(*) into n from public.sports_members
   where tenant_id='10000000-0000-4000-8000-000000000001';
-  if n<>1 then raise exception 'tenant admin cannot read own tenant'; end if;
+  if n<>5 then raise exception 'tenant admin cannot read own tenant'; end if;
   select count(*) into n from public.sports_members
   where tenant_id='10000000-0000-4000-8000-000000000002';
   if n<>0 then raise exception 'tenant admin cross-tenant read leaked'; end if;
