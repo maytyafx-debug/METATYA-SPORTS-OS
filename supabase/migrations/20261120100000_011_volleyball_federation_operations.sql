@@ -535,7 +535,8 @@ revoke all on table
   public.sports_tenant_settings,public.sports_announcements,public.sports_platform_audit_events
 from public,anon;
 revoke insert,update,delete on public.sports_platform_audit_events from public,anon,authenticated;
-revoke all on sequence public.sports_platform_audit_events_id_seq from public,anon;\ngrant usage,select on sequence public.sports_platform_audit_events_id_seq to authenticated;
+revoke all on sequence public.sports_platform_audit_events_id_seq from public,anon;
+grant usage,select on sequence public.sports_platform_audit_events_id_seq to authenticated;
 
 -- Append-only, metadata-only audit events: never copy private athlete/financial payloads.
 create or replace function public.sports_write_platform_audit_event()
