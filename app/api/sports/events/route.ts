@@ -1,10 +1,11 @@
 import {NextRequest,NextResponse} from "next/server";
 import {resolveTenant} from "@/lib/tenancy/resolve-tenant";
-import {canCreateEvent} from "@/lib/tenancy/permissions";
+import { canCreateEvent, canReadEvents } from "@/lib/tenancy/permissions";
 
 export async function GET(req:NextRequest){
  const c=await resolveTenant(req);
  if(!c.ok)return NextResponse.json({error:c.error},{status:c.status});
+ if(!canReadEvents(c.role))return NextResponse.json({error:"اجازه مشاهده اطلاعات عملیاتی را ندارید."},{status:403});
  const{data,error}=await c.supabase.from("sports_events")
   .select("id,title,sport_type,event_date,location,status")
   .eq("tenant_id",c.tenantId).order("event_date");

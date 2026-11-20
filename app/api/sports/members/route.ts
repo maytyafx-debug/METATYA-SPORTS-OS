@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/tenancy/resolve-tenant";
-import { canCreateMember } from "@/lib/tenancy/permissions";
+import { canCreateMember, canReadMembers } from "@/lib/tenancy/permissions";
 
 export async function GET(req: NextRequest) {
   const context = await resolveTenant(req);
   if (!context.ok) {
     return NextResponse.json({ error: context.error }, { status: context.status });
+  }
+  if (!canReadMembers(context.role)) {
+    return NextResponse.json({ error: "اجازه مشاهده اطلاعات عملیاتی را ندارید." }, { status: 403 });
   }
 
   const { data, error } = await context.supabase
