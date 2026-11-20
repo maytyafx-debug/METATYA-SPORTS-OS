@@ -56,6 +56,51 @@ $$;
 revoke all on function public.is_platform_owner() from public, anon;
 grant execute on function public.is_platform_owner() to authenticated;
 
+-- Keep a tenant-only predicate for private athlete fields. The general helper
+-- below gains the Platform Owner exception, while private data remains tenant-
+-- scoped unless read through the audited owner RPCs further below.
+create or replace function private.has_active_tenant_role_only(
+  p_tenant_id uuid,
+  p_roles text[] default null
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.sports_tenant_memberships m
+    join public.sports_tenants t on t.id=m.tenant_id
+    where m.tenant_id=p_tenant_id
+      and m.user_id=(select auth.uid())
+      and m.status='active'
+      and t.status='active'
+      and (p_roles is null or m.role=any(p_roles))
+  );
+$$;
+revoke all on function private.has_active_tenant_role_only(uuid,text[]) from public, anon;
+grant execute on function private.has_active_tenant_role_only(uuid,text[]) to authenticated;
+
+-- This is the central compatibility point used by existing RLS policies and
+-- volleyball RPCs. Platform Owner is global; tenant roles remain unchanged.
+create or replace function private.has_active_tenant_role(
+  p_tenant_id uuid,
+  p_roles text[] default null
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.is_platform_owner()
+    or private.has_active_tenant_role_only(p_tenant_id,p_roles);
+$$;
+revoke all on function private.has_active_tenant_role(uuid,text[]) from public, anon;
+grant execute on function private.has_active_tenant_role(uuid,text[]) to authenticated;
+
 create or replace function private.has_platform_or_active_tenant_role(
   p_tenant_id uuid,
   p_roles text[] default null
@@ -67,7 +112,7 @@ security invoker
 set search_path = ''
 as $$
   select private.is_platform_owner()
-    or private.has_active_tenant_role(p_tenant_id, p_roles);
+    or private.has_active_tenant_role_only(p_tenant_id,p_roles);
 $$;
 revoke all on function private.has_platform_or_active_tenant_role(uuid,text[]) from public, anon;
 grant execute on function private.has_platform_or_active_tenant_role(uuid,text[]) to authenticated;
@@ -75,7 +120,7 @@ grant execute on function private.has_platform_or_active_tenant_role(uuid,text[]
 create table if not exists private.platform_audit_events (
   id bigint generated always as identity primary key,
   actor_id uuid not null references auth.users(id) on delete restrict,
-  action text not null check (action ~ '^platform\\.[a-z0-9_.-]{1,100}$' or action ~ '^member\\.private\\.[a-z0-9_.-]{1,80}$'),
+  action text not null check (action ~ '^platform[.][a-z0-9_.-]{1,100}$' or action ~ '^member[.]private[.][a-z0-9_.-]{1,80}$'),
   target_type text not null check (char_length(target_type) between 1 and 80),
   target_id uuid,
   tenant_id uuid,
@@ -126,8 +171,9 @@ begin
   if auth.uid() is null or not private.is_platform_owner() then
     raise exception 'platform owner required' using errcode = '42501';
   end if;
-  if p_action is null or p_action !~ '^platform\\.[a-z0-9_.-]{1,100}$'
-     and p_action !~ '^member\\.private\\.[a-z0-9_.-]{1,80}$' then
+  if p_action is null
+     or (p_action !~ '^platform[.][a-z0-9_.-]{1,100}$'
+         and p_action !~ '^member[.]private[.][a-z0-9_.-]{1,80}$') then
     raise exception 'invalid audit action' using errcode = '22023';
   end if;
   if p_target_type is null or char_length(p_target_type) not between 1 and 80
@@ -148,13 +194,14 @@ $$;
 revoke all on function public.platform_audit_record(text,text,uuid,uuid,text,jsonb) from public, anon;
 grant execute on function public.platform_audit_record(text,text,uuid,uuid,text,jsonb) to authenticated;
 
--- The global owner can manage tenant-scoped operational data without synthetic
--- membership rows. Existing tenant policies remain in place for other users.
+-- Global owner policies are additive. Existing tenant policies continue to
+-- protect every other authenticated principal.
 drop policy if exists platform_owner_manage_tenants on public.sports_tenants;
 create policy platform_owner_manage_tenants
 on public.sports_tenants for all to authenticated
 using (private.is_platform_owner())
 with check (private.is_platform_owner());
+grant insert, update on public.sports_tenants to authenticated;
 
 do $$
 declare v_table text;
@@ -182,6 +229,26 @@ begin
 end;
 $$;
 
+-- Do not let the global-owner exception expose private athlete fields through
+-- direct PostgREST table access. Tenant owners/admins retain their scoped access.
+drop policy if exists sports_member_private_select_admin on public.sports_member_private;
+drop policy if exists sports_member_private_insert_admin on public.sports_member_private;
+drop policy if exists sports_member_private_update_admin on public.sports_member_private;
+drop policy if exists sports_member_private_delete_owner on public.sports_member_private;
+create policy sports_member_private_select_admin
+on public.sports_member_private for select to authenticated
+using (private.has_active_tenant_role_only(tenant_id,array['owner','admin']::text[]));
+create policy sports_member_private_insert_admin
+on public.sports_member_private for insert to authenticated
+with check (private.has_active_tenant_role_only(tenant_id,array['owner','admin']::text[]));
+create policy sports_member_private_update_admin
+on public.sports_member_private for update to authenticated
+using (private.has_active_tenant_role_only(tenant_id,array['owner','admin']::text[]))
+with check (private.has_active_tenant_role_only(tenant_id,array['owner','admin']::text[]));
+create policy sports_member_private_delete_owner
+on public.sports_member_private for delete to authenticated
+using (private.has_active_tenant_role_only(tenant_id,array['owner']::text[]));
+
 -- Audit/history data is globally readable by the Platform Owner, never writable.
 drop policy if exists platform_owner_read_member_history on public.sports_member_history;
 create policy platform_owner_read_member_history
@@ -193,8 +260,7 @@ create policy platform_owner_read_volleyball_audit
 on public.sports_volleyball_result_audit for select to authenticated
 using (private.is_platform_owner());
 
--- Private athlete fields are not exposed by a broad owner SELECT policy.
--- Read/write is mediated by audited RPCs so sensitive access leaves evidence.
+-- Sensitive private-member reads and updates are mediated by audited RPCs.
 create or replace function public.platform_owner_read_member_private(
   p_member_id uuid,
   p_tenant_id uuid,
@@ -274,6 +340,54 @@ end;
 $$;
 revoke all on function public.platform_owner_upsert_member_private(uuid,uuid,text,date,text) from public, anon;
 grant execute on function public.platform_owner_upsert_member_private(uuid,uuid,text,date,text) to authenticated;
+
+-- Automatically append an audit event for Platform Owner mutations to
+-- operational records. Only operation metadata is recorded, never row payloads.
+create or replace function private.capture_platform_owner_mutation()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_row jsonb; v_target_id uuid; v_tenant_id uuid;
+begin
+  if auth.uid() is null or not private.is_platform_owner() then
+    if tg_op='DELETE' then return old; else return new; end if;
+  end if;
+  if tg_op='DELETE' then v_row:=to_jsonb(old); else v_row:=to_jsonb(new); end if;
+  v_target_id:=nullif(v_row->>'id','')::uuid;
+  v_tenant_id:=nullif(v_row->>'tenant_id','')::uuid;
+
+  insert into private.platform_audit_events
+    (actor_id,action,target_type,target_id,tenant_id,reason,metadata)
+  values
+    (auth.uid(),'platform.data.'||lower(tg_op),tg_table_name,v_target_id,v_tenant_id,
+     'Automatic audit of Platform Owner data mutation',
+     jsonb_build_object('operation',lower(tg_op)));
+
+  if tg_op='DELETE' then return old; else return new; end if;
+end;
+$$;
+revoke all on function private.capture_platform_owner_mutation() from public, anon, authenticated;
+
+do $$
+declare v_table text;
+begin
+  foreach v_table in array array[
+    'sports_tenants','sports_tenant_memberships','sports_members',
+    'sports_events','sports_results','sports_volleyball_teams',
+    'sports_volleyball_team_members','sports_volleyball_competitions',
+    'sports_volleyball_competition_teams','sports_volleyball_matches',
+    'sports_volleyball_match_rosters','sports_volleyball_match_officials'
+  ] loop
+    execute format('drop trigger if exists %I on public.%I',v_table||'_platform_owner_audit',v_table);
+    execute format(
+      'create trigger %I after insert or update or delete on public.%I for each row execute function private.capture_platform_owner_mutation()',
+      v_table||'_platform_owner_audit',v_table
+    );
+  end loop;
+end;
+$$;
 
 -- No broad Storage policy is added here. The only live bucket observed is
 -- "paid-packs", which has no object policies and is not tenant-scoped.
