@@ -12,7 +12,7 @@ begin;
 
 do $$
 declare
-  v_admin_user_id uuid := 'REPLACE_WITH_AUTH_USER_UUID'::uuid;
+  v_admin_user_id uuid := '00000000-0000-0000-0000-000000000000'::uuid;
   v_tenant_id uuid;
 begin
   if v_admin_user_id = '00000000-0000-0000-0000-000000000000'::uuid then
