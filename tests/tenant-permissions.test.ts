@@ -5,31 +5,45 @@ import {
   canCreateMember,
   canCreateResult,
   canManageMemberships,
+  canReadEvents,
+  canReadMembers,
+  canReadResults,
   hasTenantCapability,
 } from "../lib/tenancy/permissions.ts";
 
-test("canonical role capabilities match the RLS contract", () => {
-  assert.equal(canCreateMember("owner"), true);
-  assert.equal(canCreateMember("admin"), true);
-  assert.equal(canCreateMember("staff"), true);
-  assert.equal(canCreateMember("coach"), false);
+test("role capabilities match the connected pilot RLS contract", () => {
+  for (const role of ["owner", "admin"]) {
+    assert.equal(canReadMembers(role), true);
+    assert.equal(canReadEvents(role), true);
+    assert.equal(canReadResults(role), true);
+    assert.equal(canCreateMember(role), true);
+    assert.equal(canCreateEvent(role), true);
+    assert.equal(canCreateResult(role), true);
+    assert.equal(hasTenantCapability(role, "members:delete"), true);
+    assert.equal(hasTenantCapability(role, "events:delete"), true);
+    assert.equal(hasTenantCapability(role, "results:delete"), true);
+  }
+
+  assert.equal(canReadMembers("referee"), true);
+  assert.equal(canReadEvents("referee"), true);
+  assert.equal(canReadResults("referee"), true);
   assert.equal(canCreateMember("referee"), false);
-  assert.equal(canCreateMember("member"), false);
-
-  assert.equal(canCreateEvent("coach"), true);
   assert.equal(canCreateEvent("referee"), false);
-  assert.equal(canCreateEvent("member"), false);
   assert.equal(canCreateResult("referee"), true);
-  assert.equal(canCreateResult("coach"), true);
-  assert.equal(canCreateResult("member"), false);
 
-  assert.equal(hasTenantCapability("owner", "events:delete"), true);
-  assert.equal(hasTenantCapability("admin", "events:delete"), false);
-  assert.equal(hasTenantCapability("owner", "results:delete"), true);
-  assert.equal(hasTenantCapability("admin", "results:delete"), false);
+  for (const role of ["coach", "staff", "member"]) {
+    assert.equal(canReadMembers(role), false);
+    assert.equal(canReadEvents(role), false);
+    assert.equal(canReadResults(role), false);
+    assert.equal(canCreateMember(role), false);
+    assert.equal(canCreateEvent(role), false);
+    assert.equal(canCreateResult(role), false);
+  }
+});
 
-  assert.equal(canManageMemberships("owner"), true);
-  assert.equal(canManageMemberships("admin"), true);
+test("membership administration stays disabled until its RLS and API are live", () => {
+  assert.equal(canManageMemberships("owner"), false);
+  assert.equal(canManageMemberships("admin"), false);
   assert.equal(canManageMemberships("referee"), false);
 });
 
