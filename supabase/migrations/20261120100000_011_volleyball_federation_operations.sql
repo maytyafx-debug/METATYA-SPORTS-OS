@@ -361,7 +361,7 @@ begin
   end if;
   return new;
 end;
-$;
+$ops$;
 revoke all on function public.sports_validate_talent_assessment_consent() from public,anon,authenticated;
 create trigger sports_member_assessment_consent_check
 before insert or update on public.sports_member_assessments
@@ -384,7 +384,7 @@ begin
   end if;
   return new;
 end;
-$;
+$ops$;
 revoke all on function public.sports_validate_development_plan_consent() from public,anon,authenticated;
 create trigger sports_development_plan_consent_check
 before insert or update on public.sports_member_development_plans
@@ -410,7 +410,7 @@ begin
   end if;
   return new;
 end;
-$;
+$ops$;
 revoke all on function public.sports_enforce_sensitive_transitions() from public,anon,authenticated;
 create trigger sports_membership_status_approval
 before update on public.sports_member_memberships
@@ -454,7 +454,7 @@ begin
   end if;
   return new;
 end;
-$;
+$ops$;
 revoke all on function public.sports_validate_facility_booking_overlap() from public,anon,authenticated;
 create trigger sports_facility_booking_overlap_check
 before insert or update on public.sports_facility_bookings
