@@ -193,7 +193,7 @@ export default function VolleyballPage() {
   return <>
     <header className="topbar"><div className="shell topbar-inner">
       <div><div className="brand">METATYA SPORT OS · VOLLEYBALL</div><small>ماژول والیبال در سامانه جامع METATYA SPORT OS</small></div>
-      <div className="topbar-inner"><Link className="btn secondary" href="/">داشبورد مادر</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
+      <div className="topbar-inner"><Link className="btn secondary" href="/">داشبورد مادر</Link><Link className="btn secondary" href="/volleyball/operations">مدیریت جامع هیئت</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
     </div></header>
     <main className="shell grid">
       <section><h1 className="page-heading">مدیریت والیبال</h1><p className="muted">باشگاه، تیم‌ها، فهرست بازیکنان، برنامه مسابقات و ثبت و تأیید نتایج</p></section>
