@@ -148,7 +148,7 @@ export default function VolleyballOperationsPage() {
  useEffect(()=>{
   let active=true;
   async function loadLookups(){
-   const sources=[...new Set(selected.fields.map(field=>LOOKUP_RESOURCE[field.key]).filter(Boolean))];
+   const sources=[...new Set(selected.fields.map(field=>LOOKUP_RESOURCE[field.key]).filter((source):source is string=>Boolean(source)))];
    const entries=await Promise.all(sources.map(async source=>{
     const path=source==="members"?"/api/sports/members":"/api/sports/operations/"+source;
     try{
@@ -161,7 +161,7 @@ export default function VolleyballOperationsPage() {
   }
   void loadLookups();
   return()=>{active=false;};
- },[selected.key]);
+ },[selected]);
 
  function setField(key:string,value:string){setValues(current=>({...current,[key]:value}));}
  async function submit(event:FormEvent<HTMLFormElement>){
