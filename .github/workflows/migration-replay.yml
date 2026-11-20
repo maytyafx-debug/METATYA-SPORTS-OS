@@ -50,7 +50,11 @@ jobs:
             echo "Applying $file"
             psql -v ON_ERROR_STOP=1 -f "$file"
           done
+      - name: Apply Platform Owner foundation draft in isolated PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f supabase/migration-drafts/platform_owner_foundation.sql
       - name: Verify privacy, tenant isolation and member history
         run: psql -v ON_ERROR_STOP=1 -f tests/migration-replay-security-assertions.sql
       - name: Verify volleyball RLS, scoring RPCs and immutable result audit
         run: psql -v ON_ERROR_STOP=1 -f tests/volleyball-db-integration.sql
+      - name: Verify Platform Owner global access, audit integrity and tenant isolation
+        run: psql -v ON_ERROR_STOP=1 -f tests/platform-owner-db-integration.sql
