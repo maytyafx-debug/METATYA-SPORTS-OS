@@ -133,7 +133,7 @@ export default function DashboardPage(){
  return <>
   <header className="topbar"><div className="shell topbar-inner">
    <div><div className="brand">METATYA SPORT OS</div><small>سامانه عمومی مدیریت باشگاه‌های ورزشی</small></div>
-   <div className="topbar-inner"><Link className="btn secondary" href="/volleyball">مدیریت والیبال</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
+   <div className="topbar-inner">{selected?.sports_tenants?.slug === "ilam-football" && <Link className="btn secondary" href="/football/dashboard">داشبورد فوتبال</Link>}<Link className="btn secondary" href="/volleyball">مدیریت والیبال</Link><button className="btn secondary" onClick={signOut}>خروج</button></div>
   </div></header>
   <main className="shell grid">
    <section><h1 className="page-heading">داشبورد مدیریتی</h1><p className="muted">مدیریت اعضا، رویدادها و نتایج باشگاه</p></section>
