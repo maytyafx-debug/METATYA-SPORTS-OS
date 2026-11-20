@@ -12,7 +12,7 @@ begin;
 
 do $$
 declare
-  v_admin_email text := 'admin@football.com';
+  v_admin_email text := 'football.ilam1405@gmail.com';
   v_admin_user_id uuid;
   v_tenant_id uuid;
 begin
