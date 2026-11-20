@@ -161,6 +161,7 @@ create table if not exists public.sports_member_assessments (
   assessment_type varchar(40) not null check (assessment_type in ('initial','technical','physical','performance','talent','periodic','other')),
   assessed_on date not null default current_date,
   assessor_profile_id uuid,
+  guardian_consent_id uuid,
   score numeric(8,3),
   indicators jsonb not null default '{}'::jsonb check (jsonb_typeof(indicators)='object'),
   strengths text,
@@ -171,7 +172,8 @@ create table if not exists public.sports_member_assessments (
   created_at timestamptz not null default now(),
   unique (id,tenant_id),
   foreign key (member_id,tenant_id) references public.sports_members(id,tenant_id) on delete restrict,
-  foreign key (assessor_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete restrict
+  foreign key (assessor_profile_id,tenant_id) references public.sports_staff_profiles(id,tenant_id) on delete restrict,
+  foreign key (guardian_consent_id,tenant_id) references public.sports_member_guardian_consents(id,tenant_id) on delete restrict
 );
 
 create table if not exists public.sports_member_development_plans (
@@ -342,6 +344,82 @@ create index if not exists sports_training_sessions_tenant_start_idx on public.s
 create index if not exists sports_training_attendance_member_idx on public.sports_training_attendance(tenant_id,member_id,recorded_at desc);
 create index if not exists sports_member_assessments_member_idx on public.sports_member_assessments(tenant_id,member_id,assessed_on desc);
 create index if not exists sports_member_development_plans_member_idx on public.sports_member_development_plans(tenant_id,member_id,status);
+-- A talent assessment requires an explicitly granted, in-date consent linked to the same athlete.
+create or replace function public.sports_validate_talent_assessment_consent()
+returns trigger language plpgsql security definer set search_path=pg_catalog,public
+as $
+begin
+  if new.assessment_type='talent' and not exists (
+    select 1 from public.sports_member_guardian_consents c
+    where c.id=new.guardian_consent_id and c.tenant_id=new.tenant_id
+      and c.member_id=new.member_id and c.consent_scope='talent_assessment'
+      and c.status='granted'
+      and (c.valid_from is null or c.valid_from<=now())
+      and (c.valid_until is null or c.valid_until>now())
+  ) then
+    raise exception 'talent assessment requires an active guardian consent for the same athlete' using errcode='42501';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.sports_validate_talent_assessment_consent() from public,anon,authenticated;
+create trigger sports_member_assessment_consent_check
+before insert or update on public.sports_member_assessments
+for each row execute function public.sports_validate_talent_assessment_consent();
+
+-- If a development plan references consent, it must be granted, current and belong to that athlete.
+create or replace function public.sports_validate_development_plan_consent()
+returns trigger language plpgsql security definer set search_path=pg_catalog,public
+as $
+begin
+  if new.guardian_consent_id is not null and not exists (
+    select 1 from public.sports_member_guardian_consents c
+    where c.id=new.guardian_consent_id and c.tenant_id=new.tenant_id
+      and c.member_id=new.member_id and c.status='granted'
+      and c.consent_scope in ('talent_assessment','data_processing')
+      and (c.valid_from is null or c.valid_from<=now())
+      and (c.valid_until is null or c.valid_until>now())
+  ) then
+    raise exception 'development plan consent must be active and linked to the same athlete' using errcode='42501';
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.sports_validate_development_plan_consent() from public,anon,authenticated;
+create trigger sports_development_plan_consent_check
+before insert or update on public.sports_member_development_plans
+for each row execute function public.sports_validate_development_plan_consent();
+
+-- Only one active membership of a given type per athlete and tenant.
+create unique index if not exists sports_member_memberships_one_active_uq
+  on public.sports_member_memberships(tenant_id,member_id,membership_type)
+  where status='active';
+
+-- Prevent two approved bookings from occupying the same facility at overlapping times.
+create or replace function public.sports_validate_facility_booking_overlap()
+returns trigger language plpgsql security definer set search_path=pg_catalog,public
+as $
+begin
+  if new.booking_status='approved' then
+    perform pg_advisory_xact_lock(hashtextextended(new.facility_id::text,0));
+    if exists (
+      select 1 from public.sports_facility_bookings b
+      where b.tenant_id=new.tenant_id and b.facility_id=new.facility_id
+        and b.booking_status='approved' and b.id<>coalesce(new.id,'00000000-0000-0000-0000-000000000000'::uuid)
+        and tstzrange(b.starts_at,b.ends_at,'[)') && tstzrange(new.starts_at,new.ends_at,'[)')
+    ) then
+      raise exception 'facility already has an approved booking in this time range' using errcode='23P01';
+    end if;
+  end if;
+  return new;
+end;
+$;
+revoke all on function public.sports_validate_facility_booking_overlap() from public,anon,authenticated;
+create trigger sports_facility_booking_overlap_check
+before insert or update on public.sports_facility_bookings
+for each row execute function public.sports_validate_facility_booking_overlap();
+
+
 create index if not exists sports_fee_invoices_member_idx on public.sports_fee_invoices(tenant_id,member_id,invoice_status,due_date);
 create index if not exists sports_fee_payments_invoice_idx on public.sports_fee_payments(tenant_id,invoice_id,payment_status);
 create index if not exists sports_member_insurance_expiry_idx on public.sports_member_insurance(tenant_id,valid_until,insurance_status);
