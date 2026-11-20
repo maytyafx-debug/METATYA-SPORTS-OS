@@ -22,12 +22,14 @@ export async function resolveTenant(request:NextRequest){
   if(!requested)
    return{ok:false as const,status:400,error:"برای دسترسی سراسری، سازمان مقصد را مشخص کنید."};
 
+  // Platform Owner may inspect active, suspended, or archived tenants.
+  // Each operational query remains scoped to this explicit tenant ID.
   const{data:tenant,error:tenantError}=await supabase.from("sports_tenants")
-   .select("id").eq("id",requested).eq("status","active").maybeSingle();
+   .select("id").eq("id",requested).maybeSingle();
   if(tenantError)
    return{ok:false as const,status:500,error:"بررسی سازمان مقصد ناموفق بود."};
   if(!tenant)
-   return{ok:false as const,status:404,error:"سازمان فعال موردنظر یافت نشد."};
+   return{ok:false as const,status:404,error:"سازمان موردنظر یافت نشد."};
 
   return{
    ok:true as const,supabase,user,tenantId:tenant.id as string,
