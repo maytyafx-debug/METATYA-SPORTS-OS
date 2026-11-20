@@ -137,6 +137,24 @@ export default function VolleyballOperationsPage() {
 
  useEffect(()=>{void load(resourceKey);setValues({});},[resourceKey,load]);
 
+ useEffect(()=>{
+  let active=true;
+  async function loadLookups(){
+   const sources=[...new Set(selected.fields.map(field=>LOOKUP_RESOURCE[field.key]).filter(Boolean))];
+   const entries=await Promise.all(sources.map(async source=>{
+    const path=source==="members"?"/api/sports/members":"/api/sports/operations/"+source;
+    try{
+     const response=await fetch(path,{cache:"no-store"});
+     const payload=await response.json() as {items?:RecordRow[];members?:RecordRow[]};
+     return [source,source==="members"?(payload.members??[]):(payload.items??[])] as const;
+    }catch{return [source,[]] as const;}
+   }));
+   if(active)setLookups(Object.fromEntries(entries));
+  }
+  void loadLookups();
+  return()=>{active=false;};
+ },[selected.key]);
+
  function setField(key:string,value:string){setValues(current=>({...current,[key]:value}));}
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();setBusy(true);setMessage("");
@@ -187,6 +205,10 @@ export default function VolleyballOperationsPage() {
       field.kind==="select"?
        <select id={"field-"+field.key} required={field.required} value={values[field.key]??""} onChange={e=>setField(field.key,e.target.value)}>
         <option value="">انتخاب کنید</option>{(field.options??[]).map(option=><option key={option} value={option}>{option}</option>)}
+       </select>:
+      LOOKUP_RESOURCE[field.key] && (lookups[LOOKUP_RESOURCE[field.key]]??[]).length>0?
+       <select id={"field-"+field.key} required={field.required} value={values[field.key]??""} onChange={e=>setField(field.key,e.target.value)}>
+        <option value="">انتخاب رکورد مرتبط</option>{(lookups[LOOKUP_RESOURCE[field.key]]??[]).map(item=><option key={String(item.id)} value={String(item.id)}>{labelOf(item)} · {String(item.id).slice(0,8)}</option>)}
        </select>:
        <input id={"field-"+field.key} required={field.required} type={field.kind==="number"?"number":field.kind==="date"?"date":field.kind==="datetime"?"datetime-local":"text"} value={values[field.key]??""} onChange={e=>setField(field.key,e.target.value)} placeholder={field.hint??(field.key.endsWith("_id")?"UUID رکورد مرتبط": "")}/>
      }
