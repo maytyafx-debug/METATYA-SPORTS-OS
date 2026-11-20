@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:security": "node --experimental-strip-types --test tests/tenant-permissions.test.ts",
+    "test:security": "node --experimental-strip-types --test tests/tenant-permissions.test.ts tests/platform-owner-auth.test.ts",
     "test:volleyball": "node --experimental-strip-types --test tests/volleyball-scoring.test.ts",
     "test": "npm run test:security && npm run test:volleyball"
   },
